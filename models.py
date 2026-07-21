@@ -22,6 +22,10 @@ class User(UserMixin, db.Model):
     custom_bg = db.Column(db.String(500), default='')
     is_admin = db.Column(db.Boolean, default=False)
     is_author = db.Column(db.Boolean, default=False)
+    is_banned = db.Column(db.Boolean, default=False)
+    is_verified = db.Column(db.Boolean, default=False)
+    warning_count = db.Column(db.Integer, default=0)
+    suspension_until = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     xp = db.Column(db.Integer, default=0)
@@ -108,6 +112,7 @@ class Comic(db.Model):
     artist = db.Column(db.String(100), default='')
     rating = db.Column(db.Float, default=0.0)
     views = db.Column(db.Integer, default=0)
+    nsfw = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -195,3 +200,27 @@ class SiteSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     key = db.Column(db.String(100), unique=True, nullable=False)
     value = db.Column(db.Text, default='')
+
+class Announcement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title_en = db.Column(db.String(200), nullable=False)
+    title_id = db.Column(db.String(200), default='')
+    content_en = db.Column(db.Text, default='')
+    content_id = db.Column(db.Text, default='')
+    type = db.Column(db.String(20), default='info')
+    pinned = db.Column(db.Boolean, default=False)
+    link = db.Column(db.String(500), default='')
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    comic_id = db.Column(db.Integer, db.ForeignKey('comic.id'))
+    chapter_id = db.Column(db.Integer, db.ForeignKey('chapter.id'), nullable=True)
+    content = db.Column(db.Text, nullable=False)
+    is_spoiler = db.Column(db.Boolean, default=False)
+    is_pinned = db.Column(db.Boolean, default=False)
+    parent_id = db.Column(db.Integer, db.ForeignKey('comment.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    user = db.relationship('User', backref='comments')
+    replies = db.relationship('Comment', backref='parent', remote_side=[id], lazy='dynamic')

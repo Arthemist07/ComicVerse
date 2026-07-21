@@ -7,58 +7,88 @@
     <a href="{{ url_for('admin.comics') }}">{{ _('manage_comics') }}</a>
     <a href="{{ url_for('admin.manage_genres') }}">{{ _('manage_genres') }}</a>
     <a href="{{ url_for('admin.manage_users') }}" class="active">{{ _('manage_users') }}</a>
+    <a href="{{ url_for('admin.authors') }}">Authors</a>
     <a href="{{ url_for('admin.settings') }}">{{ _('settings') }}</a>
     <a href="{{ url_for('admin.manage_changelog') }}">{{ _('changelog') }}</a>
     <a href="{{ url_for('admin.import_comic') }}">{{ _('import_comic') }}</a>
     <a href="{{ url_for('admin.manage_levels') }}">Levels</a>
     <a href="{{ url_for('admin.manage_roles') }}">Roles</a>
+    <a href="{{ url_for('admin.announcements') }}">Announcements</a>
     <a href="{{ url_for('admin.upload') }}">Upload Images</a>
   </div>
   <div class="admin-content">
     <h2 style="margin-bottom:24px">{{ _('manage_users') }}</h2>
-    <table class="table">
+
+    <div style="margin-bottom:16px">
+      <input type="text" id="userSearch" placeholder="Search by username or email..." oninput="filterUsers(this.value)"
+        style="padding:10px 16px;border-radius:8px;border:1px solid var(--border);background:var(--input-bg);color:var(--text-primary);width:100%;max-width:400px;font-size:14px">
+    </div>
+
+    <table class="table" id="userTable">
       <thead>
         <tr>
-          <th>ID</th>
-          <th>{{ _('username') }}</th>
-          <th>{{ _('email') }}</th>
-          <th>{{ _('followers') }}</th>
-          <th>{{ _('favorites') }}</th>
-          <th>Admin</th>
+          <th>User</th>
+          <th>Email</th>
+          <th>Role</th>
           <th>Author</th>
-          <th>{{ _('actions') }}</th>
-          <th>{{ _('joined') }}</th>
+          <th>Verified</th>
+          <th>Banned</th>
+          <th>Warnings</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        {% for user in users %}
-        <tr>
-          <td>{{ user.id }}</td>
-          <td>{{ user.username }}</td>
-          <td>{{ user.email }}</td>
-          <td>{{ user.followers_count() }}</td>
-          <td>{{ user.favorites.count() }}</td>
-          <td>{{ '✅' if user.is_admin else '❌' }}</td>
-          <td>{{ '✅' if user.is_author else '❌' }}</td>
+        {% for u in users %}
+        <tr class="user-row" data-search="{{ u.username }} {{ u.email }}">
           <td>
-            <div style="display:flex;gap:4px;flex-wrap:wrap">
-            <form method="POST" action="{{ url_for('admin.toggle_author', user_id=user.id) }}" style="display:inline">
-              <button type="submit" class="btn btn-ghost" style="padding:4px 8px;font-size:11px">
-                {{ 'Revoke Author' if user.is_author else 'Make Author' }}
-              </button>
-            </form>
-            <form method="POST" action="{{ url_for('admin.toggle_admin', user_id=user.id) }}" style="display:inline">
-              <button type="submit" class="btn btn-ghost" style="padding:4px 8px;font-size:11px;color:{{ 'var(--danger)' if user.is_admin else 'var(--accent)' }}">
-                {{ 'Revoke Admin' if user.is_admin else 'Make Admin' }}
-              </button>
-            </form>
+            <div style="display:flex;align-items:center;gap:8px">
+              <img src="{{ u.avatar }}" style="width:28px;height:28px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'">
+              <strong>{{ u.username }}</strong>
             </div>
           </td>
-          <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '' }}</td>
+          <td>{{ u.email }}</td>
+          <td>{% if u.is_admin %}Admin{% else %}User{% endif %}</td>
+          <td>{% if u.is_author %}✅{% else %}—{% endif %}</td>
+          <td>{% if u.is_verified %}✅{% else %}—{% endif %}</td>
+          <td>{% if u.is_banned %}🚫{% else %}—{% endif %}</td>
+          <td>{{ u.warning_count or 0 }}/3</td>
+          <td style="display:flex;gap:4px;flex-wrap:wrap">
+            {% if not u.is_admin or u.id != current_user.id %}
+            <form method="POST" action="{{ url_for('admin.toggle_author', user_id=u.id) }}" style="display:inline">
+              <button type="submit" class="btn btn-ghost" style="padding:4px 8px;font-size:11px" title="Toggle author">✍</button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.toggle_admin', user_id=u.id) }}" style="display:inline">
+              <button type="submit" class="btn btn-ghost" style="padding:4px 8px;font-size:11px" title="Toggle admin"
+                onclick="return confirm('Toggle admin for {{ u.username }}?')">👑</button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.ban_user', user_id=u.id) }}" style="display:inline">
+              <button type="submit" class="btn btn-ghost" style="padding:4px 8px;font-size:11px" title="{{ 'Unban' if u.is_banned else 'Ban' }}">🚫</button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.warn_user', user_id=u.id) }}" style="display:inline">
+              <button type="submit" class="btn btn-ghost" style="padding:4px 8px;font-size:11px" title="Warn">⚠️</button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.reset_user_password', user_id=u.id) }}" style="display:inline">
+              <button type="submit" class="btn btn-ghost" style="padding:4px 8px;font-size:11px" title="Reset password"
+                onclick="return confirm('Reset password for {{ u.username }}?')">🔑</button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.delete_user', user_id=u.id) }}" style="display:inline">
+              <button type="submit" class="btn btn-danger" style="padding:4px 8px;font-size:11px" title="Delete account"
+                onclick="return confirm('PERMANENTLY delete {{ u.username }}?')">🗑️</button>
+            </form>
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
+<script>
+function filterUsers(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('.user-row').forEach(r => {
+    r.style.display = r.dataset.search.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
 {% endblock %}

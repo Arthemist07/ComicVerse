@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, session, redirect, url_for
 from flask_login import login_required, current_user
-from models import db, Comic, Genre, ComicGenre, User, Changelog, Notification
+from models import db, Comic, Genre, ComicGenre, User, Changelog, Notification, ReadHistory, Announcement
 from sqlalchemy import desc
 
 main_bp = Blueprint('main', __name__)
@@ -38,8 +38,9 @@ def index():
     latest_updates = Comic.query.order_by(desc(Comic.updated_at)).limit(10).all()
     popular = Comic.query.order_by(desc(Comic.views)).limit(5).all()
 
+    announcements = Announcement.query.filter_by(pinned=True).order_by(Announcement.created_at.desc()).all()
     return render_template('index.html', comics=comics, genres=genres,
-                         latest_updates=latest_updates, popular=popular)
+                         latest_updates=latest_updates, popular=popular, announcements=announcements)
 
 @main_bp.route('/language/<lang>')
 def set_language(lang):

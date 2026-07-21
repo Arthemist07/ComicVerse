@@ -4,12 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ get_setting('site_name_en') or 'ComicVerse' }} - {% block title %}{% endblock %}</title>
+  <link rel="icon" href="{{ get_setting('favicon') or url_for('static', filename='favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   {% if get_setting('custom_css') %}<style>{{ get_setting('custom_css') | safe }}</style>{% endif %}
 </head>
 <body>
   <nav class="navbar">
-    <a href="{{ url_for('main.index') }}" class="nav-logo">{{ get_setting('site_name_en') or 'ComicVerse' }}</a>
+    <a href="{{ url_for('main.index') }}" class="nav-logo">
+      {% if get_setting('site_logo') %}
+      <img src="{{ get_setting('site_logo') }}" style="height:32px;vertical-align:middle">
+      {% else %}
+      {{ get_setting('site_name_en') or 'ComicVerse' }}
+      {% endif %}
+    </a>
     <div class="nav-links">
       <a href="{{ url_for('main.index') }}" class="{% if request.endpoint == 'main.index' %}active{% endif %}">{{ _('home') }}</a>
       <a href="{{ url_for('comic.genres') }}">{{ _('genres') }}</a>

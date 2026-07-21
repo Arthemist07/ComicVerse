@@ -88,6 +88,88 @@
       </div>
     </div>
     {% endif %}
+
+    <div style="margin-top:48px">
+      <h2 class="section-title">Comments</h2>
+      <div id="comments-section">
+        {% if current_user.is_authenticated %}
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <input type="text" id="commentInput" placeholder="Write a comment..." style="flex:1;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--input-bg);color:var(--text-primary)">
+          <button class="btn btn-primary" onclick="postComment({{ comic.id }})">Post</button>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-bottom:16px">
+          <input type="checkbox" id="spoilerCheck"> Mark as spoiler
+        </label>
+        {% endif %}
+        <div id="commentsList"></div>
+      </div>
+    </div>
   </div>
 </div>
+<script>
+function loadComments(comicId) {
+  fetch('/api/comic/' + comicId + '/comments').then(r => r.json()).then(comments => {
+    const container = document.getElementById('commentsList');
+    container.innerHTML = comments.map(c => renderComment(c, comicId)).join('');
+  });
+}
+function renderComment(c, comicId) {
+  const isOwner = currentUser ? true : false;
+  return '<div style="padding:12px 0;border-bottom:1px solid var(--border)">' +
+    (c.is_pinned ? '<span style="font-size:11px;color:var(--accent)">📌 Pinned</span>' : '') +
+    '<div style="display:flex;gap:8px;align-items:start">' +
+    '<img src="' + (c.avatar || 'default.png') + '" style="width:32px;height:32px;border-radius:50%;object-fit:cover" onerror="this.style.display=\'none\'">' +
+    '<div style="flex:1">' +
+    '<strong style="font-size:13px">' + c.user + '</strong> ' +
+    '<span style="font-size:11px;color:var(--text-secondary)">' + c.created_at + '</span>' +
+    '<div style="margin-top:4px;font-size:14px">' + (c.is_spoiler ? '<span class="spoiler-tag" onclick="this.innerHTML=\'' + c.content + '\'">[Spoiler] Click to reveal</span>' : c.content) + '</div>' +
+    '<div style="display:flex;gap:8px;margin-top:6px">' +
+    '<button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="showReplyForm(' + c.id + ')">Reply</button>' +
+    (currentUser ? '<button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="deleteComment(' + c.id + ')">Delete</button>' : '') +
+    '</div>' +
+    (c.replies && c.replies.length ? '<div style="margin-left:24px;margin-top:8px;padding-left:12px;border-left:2px solid var(--border)">' +
+      c.replies.map(r => '<div style="padding:6px 0"><strong style="font-size:12px">' + r.user + '</strong> <span style="font-size:11px;color:var(--text-secondary)">' + r.created_at + '</span><div style="font-size:13px">' + (r.is_spoiler ? '<span class="spoiler-tag" onclick="this.innerHTML=\'' + r.content + '\'">[Spoiler]</span>' : r.content) + '</div></div>').join('') +
+    '</div>' : '') +
+    '<div id="replyForm-' + c.id + '" style="display:none;margin-top:8px">' +
+    '<div style="display:flex;gap:6px"><input type="text" id="replyInput-' + c.id + '" placeholder="Write reply..." style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--input-bg);color:var(--text-primary);font-size:13px">' +
+    '<button class="btn btn-primary" style="padding:6px 14px;font-size:12px" onclick="postReply(' + c.id + ',' + comicId + ')">Reply</button></div></div>' +
+    '</div></div></div>';
+}
+function postComment(comicId) {
+  const input = document.getElementById('commentInput');
+  const content = input.value.trim();
+  const is_spoiler = document.getElementById('spoilerCheck').checked;
+  if (!content) return;
+  fetch('/api/comic/' + comicId + '/comment', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({content: content, is_spoiler: is_spoiler})
+  }).then(r => r.json()).then(d => {
+    if (d.ok) { input.value = ''; loadComments(comicId); }
+  });
+}
+function postReply(parentId, comicId) {
+  const input = document.getElementById('replyInput-' + parentId);
+  const content = input.value.trim();
+  if (!content) return;
+  fetch('/api/comic/' + comicId + '/comment', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({content: content, parent_id: parentId})
+  }).then(r => r.json()).then(d => {
+    if (d.ok) { input.value = ''; loadComments(comicId); }
+  });
+}
+function showReplyForm(id) {
+  const f = document.getElementById('replyForm-' + id);
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+function deleteComment(id) {
+  if (!confirm('Delete comment?')) return;
+  fetch('/api/comment/' + id + '/delete', {method: 'POST'}).then(r => r.json()).then(d => {
+    if (d.ok) location.reload();
+  });
+}
+loadComments({{ comic.id }});
+</script>
 {% endblock %}

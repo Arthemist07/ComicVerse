@@ -22,7 +22,19 @@ def dashboard():
         comics = Comic.query.order_by(Comic.updated_at.desc()).all()
     else:
         comics = Comic.query.filter_by(author_id=current_user.id).order_by(Comic.updated_at.desc()).all()
-    return render_template('author/dashboard.html', comics=comics)
+    total_chapters = sum(c.chapters.count() for c in comics)
+    total_views = sum(c.views for c in comics)
+    total_followers = 0
+    from models import Favorite
+    for c in comics:
+        total_followers += Favorite.query.filter_by(comic_id=c.id).count()
+    stats = {
+        'comics': len(comics),
+        'chapters': total_chapters,
+        'views': total_views,
+        'followers': total_followers,
+    }
+    return render_template('author/dashboard.html', comics=comics, stats=stats)
 
 @author_bp.route('/comic/create', methods=['GET', 'POST'])
 @login_required
@@ -237,3 +249,19 @@ def delete_genre(id):
     db.session.commit()
     flash('Genre deleted', 'success')
     return redirect(url_for('author.manage_genres'))
+
+@author_bp.route('/genre/inline-add', methods=['POST'])
+@login_required
+@author_required
+def inline_add_genre():
+    name_en = request.form.get('name_en', '').strip()
+    name_id = request.form.get('name_id', '').strip()
+    if not name_en or not name_id:
+        return {'error': 'Both names required'}, 400
+    existing = Genre.query.filter_by(name_en=name_en).first()
+    if existing:
+        return {'id': existing.id, 'name_en': existing.name_en}
+    g = Genre(name_en=name_en, name_id=name_id)
+    db.session.add(g)
+    db.session.commit()
+    return {'id': g.id, 'name_en': g.name_en}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Announcements{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <a href="{{ url_for('admin.dashboard') }}">{{ _('dashboard') }}</a>
+    <a href="{{ url_for('admin.comics') }}">{{ _('manage_comics') }}</a>
+    <a href="{{ url_for('admin.manage_genres') }}">{{ _('manage_genres') }}</a>
+    <a href="{{ url_for('admin.manage_users') }}">{{ _('manage_users') }}</a>
+    <a href="{{ url_for('admin.authors') }}">Authors</a>
+    <a href="{{ url_for('admin.settings') }}">{{ _('settings') }}</a>
+    <a href="{{ url_for('admin.manage_changelog') }}">{{ _('changelog') }}</a>
+    <a href="{{ url_for('admin.import_comic') }}">{{ _('import_comic') }}</a>
+    <a href="{{ url_for('admin.manage_levels') }}">Levels</a>
+    <a href="{{ url_for('admin.manage_roles') }}">Roles</a>
+    <a href="{{ url_for('admin.announcements') }}" class="active">Announcements</a>
+    <a href="{{ url_for('admin.upload') }}">Upload Images</a>
+  </div>
+  <div class="admin-content">
+    <h2 style="margin-bottom:24px">Announcements</h2>
+
+    <div style="background:var(--card-bg);padding:20px;border-radius:8px;border:1px solid var(--border);margin-bottom:24px">
+      <h3 style="margin-bottom:16px">Create Announcement</h3>
+      <form method="POST" action="{{ url_for('admin.create_announcement') }}" style="max-width:600px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group"><label>Title (EN)</label><input type="text" name="title_en" class="form-input" required></div>
+          <div class="form-group"><label>Title (ID)</label><input type="text" name="title_id" class="form-input"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group"><label>Content (EN)</label><textarea name="content_en" class="form-textarea" rows="3" required></textarea></div>
+          <div class="form-group"><label>Content (ID)</label><textarea name="content_id" class="form-textarea" rows="3"></textarea></div>
+        </div>
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+          <div class="form-group" style="margin:0;flex:1;min-width:120px">
+            <label>Type</label>
+            <select name="type" class="form-select">
+              <option value="info">Info</option>
+              <option value="warning">Warning</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="update">Update</option>
+              <option value="news">News</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;flex:1;min-width:120px">
+            <label>Link (optional)</label>
+            <input type="text" name="link" class="form-input" placeholder="/comic/1">
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-top:16px">
+            <input type="checkbox" name="pinned" value="1"> 📌 Pinned
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top:12px">Create Announcement</button>
+      </form>
+    </div>
+
+    <table class="table">
+      <thead><tr><th>📌</th><th>Title</th><th>Type</th><th>Date</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for a in announcements %}
+        <tr>
+          <td>{{ '📌' if a.pinned else '' }}</td>
+          <td><strong>{{ a.title_en }}</strong><br><span style="font-size:12px;color:var(--text-secondary)">{{ a.content_en[:80] }}</span></td>
+          <td><span class="badge badge-{{ a.type }}">{{ a.type }}</span></td>
+          <td style="font-size:12px">{{ a.created_at.strftime('%Y-%m-%d') }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('admin.delete_announcement', id=a.id) }}" style="display:inline" onsubmit="return confirm('Delete?')">
+              <button type="submit" class="btn btn-danger" style="padding:4px 12px;font-size:12px">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

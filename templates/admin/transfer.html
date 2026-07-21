@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Transfer Comic{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <a href="{{ url_for('admin.dashboard') }}">{{ _('dashboard') }}</a>
+    <a href="{{ url_for('admin.comics') }}">{{ _('manage_comics') }}</a>
+    <a href="{{ url_for('admin.manage_genres') }}">{{ _('manage_genres') }}</a>
+    <a href="{{ url_for('admin.manage_users') }}">{{ _('manage_users') }}</a>
+    <a href="{{ url_for('admin.authors') }}">Authors</a>
+    <a href="{{ url_for('admin.settings') }}">{{ _('settings') }}</a>
+    <a href="{{ url_for('admin.manage_changelog') }}">{{ _('changelog') }}</a>
+    <a href="{{ url_for('admin.import_comic') }}">{{ _('import_comic') }}</a>
+    <a href="{{ url_for('admin.manage_levels') }}">Levels</a>
+    <a href="{{ url_for('admin.manage_roles') }}">Roles</a>
+    <a href="{{ url_for('admin.announcements') }}">Announcements</a>
+    <a href="{{ url_for('admin.upload') }}">Upload Images</a>
+  </div>
+  <div class="admin-content">
+    <h2 style="margin-bottom:8px">Transfer Ownership</h2>
+    <p style="color:var(--text-secondary);margin-bottom:24px">Transfer "{{ comic.title_en }}" to another user</p>
+    <form method="POST" style="max-width:400px">
+      <div class="form-group">
+        <label>Recipient Username</label>
+        <input type="text" name="username" class="form-input" required placeholder="Enter username">
+      </div>
+      <button type="submit" class="btn btn-primary">Transfer</button>
+      <a href="{{ url_for('admin.comics') }}" class="btn btn-ghost">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

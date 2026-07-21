@@ -16,15 +16,28 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
+from datetime import datetime, date, timedelta
+
 @admin_bp.route('/')
 @login_required
 @admin_required
 def dashboard():
+    from sqlalchemy import func
+    total_views = db.session.query(func.sum(Comic.views)).scalar() or 0
+    total_users = User.query.count()
+    total_authors = User.query.filter_by(is_author=True).count()
+    recent_comics = Comic.query.order_by(Comic.updated_at.desc()).limit(5).all()
+    recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
+    pending_authors = User.query.filter_by(is_author=True, is_verified=False).count()
     stats = {
         'comics': Comic.query.count(),
         'chapters': Chapter.query.count(),
-        'users': User.query.count(),
-        'views': sum(c.views for c in Comic.query.all())
+        'users': total_users,
+        'authors': total_authors,
+        'views': total_views,
+        'pending_authors': pending_authors,
+        'recent_comics': recent_comics,
+        'recent_users': recent_users,
     }
     return render_template('admin/dashboard.html', stats=stats)
 
@@ -205,6 +218,22 @@ def delete_genre(id):
     flash('Genre deleted', 'success')
     return redirect(url_for('admin.manage_genres'))
 
+@admin_bp.route('/genre/inline-add', methods=['POST'])
+@login_required
+@admin_required
+def inline_add_genre():
+    name_en = request.form.get('name_en', '').strip()
+    name_id = request.form.get('name_id', '').strip()
+    if not name_en or not name_id:
+        return {'error': 'Both names required'}, 400
+    existing = Genre.query.filter_by(name_en=name_en).first()
+    if existing:
+        return {'id': existing.id, 'name_en': existing.name_en}
+    g = Genre(name_en=name_en, name_id=name_id)
+    db.session.add(g)
+    db.session.commit()
+    return {'id': g.id, 'name_en': g.name_en}
+
 @admin_bp.route('/users')
 @login_required
 @admin_required
@@ -352,6 +381,33 @@ def upload():
         all_imgs.append(f'/static/uploads/{rel}')
     return render_template('admin/upload.html', recent_images=all_imgs)
 
+@admin_bp.route('/comic/toggle-nsfw/<int:id>')
+@login_required
+@admin_required
+def toggle_nsfw(id):
+    comic = Comic.query.get_or_404(id)
+    comic.nsfw = not comic.nsfw
+    db.session.commit()
+    flash(f'NSFW: {comic.nsfw}', 'success')
+    return redirect(url_for('admin.comics'))
+
+@admin_bp.route('/comic/transfer/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def transfer_comic(id):
+    comic = Comic.query.get_or_404(id)
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            flash('User not found', 'error')
+            return redirect(url_for('admin.transfer_comic', id=id))
+        comic.author_id = user.id
+        db.session.commit()
+        flash(f'Comic transferred to {username}', 'success')
+        return redirect(url_for('admin.comics'))
+    return render_template('admin/transfer.html', comic=comic)
+
 @admin_bp.route('/upload-image', methods=['POST'])
 @login_required
 @admin_required
@@ -377,6 +433,53 @@ def toggle_author(user_id):
     user.is_author = not user.is_author
     db.session.commit()
     flash(f'User {user.username} author status: {user.is_author}', 'success')
+    return redirect(url_for('admin.manage_users'))
+
+@admin_bp.route('/user/ban/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def ban_user(user_id):
+    if user_id == current_user.id:
+        flash('Cannot ban yourself', 'error')
+        return redirect(url_for('admin.manage_users'))
+    user = User.query.get_or_404(user_id)
+    user.is_banned = not user.is_banned
+    db.session.commit()
+    flash(f'{user.username} banned: {user.is_banned}', 'success')
+    return redirect(url_for('admin.manage_users'))
+
+@admin_bp.route('/user/warn/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def warn_user(user_id):
+    user = User.query.get_or_404(user_id)
+    user.warning_count = (user.warning_count or 0) + 1
+    db.session.commit()
+    flash(f'Warning issued to {user.username} ({user.warning_count}/3)', 'success')
+    return redirect(url_for('admin.manage_users'))
+
+@admin_bp.route('/user/reset-password/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def reset_user_password(user_id):
+    user = User.query.get_or_404(user_id)
+    new_pass = request.form.get('new_password', 'changeme123')
+    user.set_password(new_pass)
+    db.session.commit()
+    flash(f'Password for {user.username} reset to: {new_pass}', 'success')
+    return redirect(url_for('admin.manage_users'))
+
+@admin_bp.route('/user/delete/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_user(user_id):
+    if user_id == current_user.id:
+        flash('Cannot delete yourself', 'error')
+        return redirect(url_for('admin.manage_users'))
+    user = User.query.get_or_404(user_id)
+    db.session.delete(user)
+    db.session.commit()
+    flash('User deleted', 'success')
     return redirect(url_for('admin.manage_users'))
 
 @admin_bp.route('/toggle-admin/<int:user_id>', methods=['POST'])
@@ -458,6 +561,84 @@ def manage_roles():
     roles = UserRole.query.all()
     users = User.query.order_by(User.username).all()
     return render_template('admin/roles.html', roles=roles, users=users)
+
+@admin_bp.route('/authors')
+@login_required
+@admin_required
+def authors():
+    from datetime import datetime
+    authors_list = User.query.filter_by(is_author=True).all()
+    for a in authors_list:
+        a.comics = Comic.query.filter_by(author_id=a.id).count()
+    return render_template('admin/authors.html', authors=authors_list, now=datetime.utcnow())
+
+@admin_bp.route('/author/toggle-verify/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def toggle_verify(user_id):
+    user = User.query.get_or_404(user_id)
+    user.is_verified = not user.is_verified
+    db.session.commit()
+    flash(f'{user.username} verified: {user.is_verified}', 'success')
+    return redirect(url_for('admin.authors'))
+
+@admin_bp.route('/author/suspend/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def suspend_author(user_id):
+    user = User.query.get_or_404(user_id)
+    days = int(request.form.get('days', 7))
+    user.suspension_until = datetime.utcnow() + timedelta(days=days)
+    db.session.commit()
+    flash(f'{user.username} suspended for {days} days', 'success')
+    return redirect(url_for('admin.authors'))
+
+@admin_bp.route('/author/unsuspend/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def unsuspend_author(user_id):
+    user = User.query.get_or_404(user_id)
+    user.suspension_until = None
+    db.session.commit()
+    flash(f'{user.username} unsuspended', 'success')
+    return redirect(url_for('admin.authors'))
+
+@admin_bp.route('/announcements')
+@login_required
+@admin_required
+def announcements():
+    from models import Announcement
+    anns = Announcement.query.order_by(Announcement.created_at.desc()).all()
+    return render_template('admin/announcements.html', announcements=anns)
+
+@admin_bp.route('/announcement/create', methods=['POST'])
+@login_required
+@admin_required
+def create_announcement():
+    from models import Announcement
+    a = Announcement(
+        title_en=request.form['title_en'],
+        title_id=request.form.get('title_id', request.form['title_en']),
+        content_en=request.form['content_en'],
+        content_id=request.form.get('content_id', request.form['content_en']),
+        type=request.form.get('type', 'info'),
+        pinned='pinned' in request.form,
+        link=request.form.get('link', ''),
+    )
+    db.session.add(a)
+    db.session.commit()
+    flash('Announcement created', 'success')
+    return redirect(url_for('admin.announcements'))
+
+@admin_bp.route('/announcement/delete/<int:id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_announcement(id):
+    from models import Announcement
+    Announcement.query.filter_by(id=id).delete()
+    db.session.commit()
+    flash('Announcement deleted', 'success')
+    return redirect(url_for('admin.announcements'))
 
 @admin_bp.route('/send-notification', methods=['POST'])
 @login_required

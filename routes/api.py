@@ -82,6 +82,70 @@ def complete_chapter():
         'streak': current_user.streak
     })
 
+@api_bp.route('/comic/<int:comic_id>/comments', methods=['GET'])
+def get_comments(comic_id):
+    from models import Comment
+    comments = Comment.query.filter_by(comic_id=comic_id, parent_id=None).order_by(Comment.is_pinned.desc(), Comment.created_at.desc()).all()
+    result = []
+    for c in comments:
+        result.append({
+            'id': c.id,
+            'user': c.user.username,
+            'avatar': c.user.avatar,
+            'content': c.content,
+            'is_spoiler': c.is_spoiler,
+            'is_pinned': c.is_pinned,
+            'created_at': c.created_at.strftime('%Y-%m-%d %H:%M') if c.created_at else '',
+            'replies': [{
+                'id': r.id,
+                'user': r.user.username,
+                'avatar': r.user.avatar,
+                'content': r.content,
+                'is_spoiler': r.is_spoiler,
+                'created_at': r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else ''
+            } for r in c.replies.all()]
+        })
+    return jsonify(result)
+
+@api_bp.route('/comic/<int:comic_id>/comment', methods=['POST'])
+@login_required
+def add_comment(comic_id):
+    from models import Comment
+    data = request.get_json() or {}
+    content = data.get('content', '').strip()
+    parent_id = data.get('parent_id')
+    is_spoiler = data.get('is_spoiler', False)
+    if not content:
+        return jsonify({'error': 'Content required'}), 400
+    c = Comment(user_id=current_user.id, comic_id=comic_id, content=content,
+                parent_id=parent_id, is_spoiler=is_spoiler)
+    db.session.add(c)
+    db.session.commit()
+    return jsonify({'ok': True, 'id': c.id})
+
+@api_bp.route('/comment/<int:id>/pin', methods=['POST'])
+@login_required
+def pin_comment(id):
+    from models import Comment
+    c = Comment.query.get_or_404(id)
+    if not current_user.is_admin and not current_user.is_author:
+        return jsonify({'error': 'Unauthorized'}), 403
+    c.is_pinned = not c.is_pinned
+    db.session.commit()
+    return jsonify({'pinned': c.is_pinned})
+
+@api_bp.route('/comment/<int:id>/delete', methods=['POST'])
+@login_required
+def delete_comment(id):
+    from models import Comment
+    c = Comment.query.get_or_404(id)
+    if c.user_id != current_user.id and not current_user.is_admin and not current_user.is_author:
+        return jsonify({'error': 'Unauthorized'}), 403
+    Comment.query.filter_by(parent_id=id).delete()
+    db.session.delete(c)
+    db.session.commit()
+    return jsonify({'ok': True})
+
 @api_bp.route('/profile/update', methods=['POST'])
 @login_required
 def update_profile():

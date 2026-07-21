@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Author Management{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <a href="{{ url_for('admin.dashboard') }}">{{ _('dashboard') }}</a>
+    <a href="{{ url_for('admin.comics') }}">{{ _('manage_comics') }}</a>
+    <a href="{{ url_for('admin.manage_genres') }}">{{ _('manage_genres') }}</a>
+    <a href="{{ url_for('admin.manage_users') }}">{{ _('manage_users') }}</a>
+    <a href="{{ url_for('admin.authors') }}" class="active">Authors</a>
+    <a href="{{ url_for('admin.settings') }}">{{ _('settings') }}</a>
+    <a href="{{ url_for('admin.manage_changelog') }}">{{ _('changelog') }}</a>
+    <a href="{{ url_for('admin.import_comic') }}">{{ _('import_comic') }}</a>
+    <a href="{{ url_for('admin.manage_levels') }}">Levels</a>
+    <a href="{{ url_for('admin.manage_roles') }}">Roles</a>
+    <a href="{{ url_for('admin.announcements') }}">Announcements</a>
+    <a href="{{ url_for('admin.upload') }}">Upload Images</a>
+  </div>
+  <div class="admin-content">
+    <h2 style="margin-bottom:24px">Author Management</h2>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Author</th>
+          <th>Email</th>
+          <th>Comics</th>
+          <th>Verified</th>
+          <th>Banned</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in authors %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <img src="{{ a.avatar }}" style="width:28px;height:28px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'">
+              <strong>{{ a.username }}</strong>
+            </div>
+          </td>
+          <td>{{ a.email }}</td>
+          <td>{{ a.comics if a.comics is defined else 0 }}</td>
+          <td>{% if a.is_verified %}✅{% else %}—{% endif %}</td>
+          <td>{% if a.is_banned %}🚫{% else %}—{% endif %}</td>
+          <td>
+            {% if a.suspension_until and a.suspension_until > now %}
+            <span style="color:var(--danger)">Suspended until {{ a.suspension_until.strftime('%Y-%m-%d') }}</span>
+            {% elif a.is_banned %}
+            <span style="color:var(--danger)">Banned</span>
+            {% else %}
+            <span style="color:var(--success)">Active</span>
+            {% endif %}
+          </td>
+          <td style="display:flex;gap:4px;flex-wrap:wrap">
+            <form method="POST" action="{{ url_for('admin.toggle_verify', user_id=a.id) }}" style="display:inline">
+              <button type="submit" class="btn btn-ghost" style="padding:4px 8px;font-size:11px">
+                {{ 'Unverify' if a.is_verified else 'Verify ✅' }}
+              </button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.suspend_author', user_id=a.id) }}" style="display:inline">
+              <select name="days" style="padding:2px 4px;font-size:11px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--text-primary)">
+                <option value="3">3d</option>
+                <option value="7" selected>7d</option>
+                <option value="30">30d</option>
+              </select>
+              <button type="submit" class="btn btn-ghost" style="padding:4px 8px;font-size:11px">Suspend</button>
+            </form>
+            {% if a.suspension_until %}
+            <form method="POST" action="{{ url_for('admin.unsuspend_author', user_id=a.id) }}" style="display:inline">
+              <button type="submit" class="btn btn-ghost" style="padding:4px 8px;font-size:11px">Unsuspend</button>
+            </form>
+            {% endif %}
+            <form method="POST" action="{{ url_for('admin.ban_user', user_id=a.id) }}" style="display:inline">
+              <button type="submit" class="btn btn-ghost" style="padding:4px 8px;font-size:11px">{{ 'Unban' if a.is_banned else 'Ban 🚫' }}</button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.delete_user', user_id=a.id) }}" style="display:inline">
+              <button type="submit" class="btn btn-danger" style="padding:4px 8px;font-size:11px" onclick="return confirm('Delete author?')">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -2,7 +2,7 @@
 {% block title %}{{ comic.title_en }} - {{ _('ch') }} {{ chapter.number }}{% endblock %}
 {% block content %}
 <div class="reader-page">
-  <div style="padding:16px 24px;display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.8)">
+  <div class="reader-header">
     <a href="{{ url_for('comic.comic_detail', comic_id=comic.id) }}" style="color:white;text-decoration:none;font-size:14px">
       ← {{ comic.title_en }}
     </a>
@@ -10,12 +10,20 @@
       {{ _('ch') }} {{ chapter.number }}
       {% if session.get('language') == 'en' and chapter.title_en %} - {{ chapter.title_en }}{% elif chapter.title_id %} - {{ chapter.title_id }}{% endif %}
     </div>
-    <div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="reader-btn" onclick="toggleReaderMode()" title="Toggle mode">📖</button>
+      <button class="reader-btn" onclick="toggleDirection()" title="Direction">↔️</button>
+      <button class="reader-btn" onclick="zoomOut()" title="Zoom out">🔍−</button>
+      <span id="zoomLevel" style="color:white;font-size:12px;min-width:30px;text-align:center">100%</span>
+      <button class="reader-btn" onclick="zoomIn()" title="Zoom in">🔍+</button>
+      <button class="reader-btn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+      <button class="reader-btn" onclick="toggleAutoScroll()" title="Auto scroll" id="autoScrollBtn">▶</button>
+    </div>
   </div>
 
-  <div class="reader-content">
+  <div id="readerContent" class="reader-content vertical-mode">
     {% for page in pages %}
-    <img src="{{ page }}" class="reader-page-img" alt="Page {{ loop.index }}" onclick="zoomPage(this)" loading="lazy">
+    <img src="{{ page }}" class="reader-page-img" alt="Page {{ loop.index }}" loading="lazy">
     {% else %}
     <div style="padding:80px;text-align:center;color:var(--text-secondary)">{{ _('no_pages') }}</div>
     {% endfor %}
@@ -41,6 +49,63 @@
 </div>
 
 <script>
+// Reading config
+let readerMode = localStorage.getItem('readerMode') || 'vertical';
+let readerDirection = localStorage.getItem('readerDirection') || 'ltr';
+let zoom = 1;
+let autoScroll = null;
+
+function setReaderMode(mode) {
+  readerMode = mode;
+  localStorage.setItem('readerMode', mode);
+  const c = document.getElementById('readerContent');
+  c.className = 'reader-content ' + mode + '-mode';
+  c.style.flexDirection = readerDirection === 'rtl' ? 'row-reverse' : 'column';
+}
+function toggleReaderMode() {
+  setReaderMode(readerMode === 'vertical' ? 'page' : 'vertical');
+}
+function toggleDirection() {
+  readerDirection = readerDirection === 'ltr' ? 'rtl' : 'ltr';
+  localStorage.setItem('readerDirection', readerDirection);
+  document.getElementById('readerContent').style.flexDirection = readerDirection === 'rtl' ? 'row-reverse' : 'column';
+}
+function zoomIn() {
+  zoom = Math.min(zoom + 0.25, 3);
+  applyZoom();
+}
+function zoomOut() {
+  zoom = Math.max(zoom - 0.25, 0.25);
+  applyZoom();
+}
+function applyZoom() {
+  document.querySelectorAll('.reader-page-img').forEach(img => img.style.transform = 'scale(' + zoom + ')');
+  document.getElementById('zoomLevel').textContent = Math.round(zoom * 100) + '%';
+}
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+}
+function toggleAutoScroll() {
+  if (autoScroll) {
+    clearInterval(autoScroll);
+    autoScroll = null;
+    document.getElementById('autoScrollBtn').textContent = '▶';
+    return;
+  }
+  document.getElementById('autoScrollBtn').textContent = '⏸';
+  autoScroll = setInterval(() => {
+    window.scrollBy(0, 2);
+  }, 30);
+}
+
+// Init mode
+setReaderMode(readerMode);
+
+// Keyboard shortcuts
 document.addEventListener('keydown', function(e) {
   const pages = document.querySelectorAll('.reader-page-img');
   let current = 0;
@@ -54,8 +119,14 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'ArrowRight' && current < pages.length - 1) {
     pages[current + 1].scrollIntoView({ behavior: 'smooth' });
   }
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+  if (e.key === 'm' || e.key === 'M') toggleReaderMode();
+  if (e.key === '+' || e.key === '=') zoomIn();
+  if (e.key === '-') zoomOut();
+  if (e.key === ' ') { e.preventDefault(); toggleAutoScroll(); }
 });
 
+// Completion tracking
 let completed = false;
 function checkCompletion() {
   if (completed) return;

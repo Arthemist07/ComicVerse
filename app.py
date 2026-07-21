@@ -119,6 +119,21 @@ def init_db():
     with app.app_context():
         try:
             db.create_all()
+            # Migrate existing tables — add columns if missing
+            try:
+                from sqlalchemy import inspect
+                inspector = inspect(db.engine)
+                for table, cols in {
+                    'user': [('is_banned', 'BOOLEAN DEFAULT FALSE'), ('is_verified', 'BOOLEAN DEFAULT FALSE'), ('warning_count', 'INTEGER DEFAULT 0'), ('suspension_until', 'TIMESTAMP')],
+                    'comic': [('nsfw', 'BOOLEAN DEFAULT FALSE')],
+                }.items():
+                    existing = [c['name'] for c in inspector.get_columns(table)]
+                    for col_name, col_type in cols:
+                        if col_name not in existing:
+                            db.session.execute(db.text(f'ALTER TABLE "{table}" ADD COLUMN {col_name} {col_type}'))
+                db.session.commit()
+            except Exception as e2:
+                print(f"Migration note (non-fatal): {e2}")
             if not User.query.filter_by(is_admin=True).first():
                 admin = User(username='admin', email='admin@comic.com', is_admin=True)
                 admin.set_password('admin123')

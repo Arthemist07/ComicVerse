@@ -22,6 +22,21 @@
 </section>
 
 <div class="container">
+  {% if announcements %}
+  <div style="margin-bottom:24px">
+    {% for a in announcements %}
+    <div style="padding:14px 20px;background:var(--card-bg);border-radius:8px;border:1px solid var(--border);margin-bottom:8px;display:flex;align-items:center;gap:12px">
+      <span>{% if a.type == 'warning' %}⚠️{% elif a.type == 'maintenance' %}🔧{% elif a.type == 'update' %}📢{% else %}ℹ️{% endif %}</span>
+      <div style="flex:1">
+        <strong style="font-size:14px">{{ a.title_en if session.get('language') == 'en' else a.title_id or a.title_en }}</strong>
+        <div style="font-size:13px;color:var(--text-secondary)">{{ a.content_en if session.get('language') == 'en' else a.content_id or a.content_en }}</div>
+      </div>
+      {% if a.link %}<a href="{{ a.link }}" class="btn btn-ghost" style="padding:4px 12px;font-size:12px">View</a>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   {% if current_user.is_authenticated and current_user.is_admin %}
   <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap">
     <a href="{{ url_for('admin.create_comic') }}" class="btn btn-primary" style="padding:10px 20px">+ Create Comic</a>

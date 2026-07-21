@@ -7,42 +7,50 @@
     <a href="{{ url_for('admin.comics') }}" class="active">{{ _('manage_comics') }}</a>
     <a href="{{ url_for('admin.manage_genres') }}">{{ _('manage_genres') }}</a>
     <a href="{{ url_for('admin.manage_users') }}">{{ _('manage_users') }}</a>
+    <a href="{{ url_for('admin.authors') }}">Authors</a>
     <a href="{{ url_for('admin.settings') }}">{{ _('settings') }}</a>
     <a href="{{ url_for('admin.manage_changelog') }}">{{ _('changelog') }}</a>
     <a href="{{ url_for('admin.import_comic') }}">{{ _('import_comic') }}</a>
     <a href="{{ url_for('admin.manage_levels') }}">Levels</a>
     <a href="{{ url_for('admin.manage_roles') }}">Roles</a>
+    <a href="{{ url_for('admin.announcements') }}">Announcements</a>
     <a href="{{ url_for('admin.upload') }}">Upload Images</a>
   </div>
   <div class="admin-content">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-      <h2>{{ _('manage_comics') }}</h2>
-      <a href="{{ url_for('admin.create_comic') }}" class="btn btn-primary">{{ _('create_comic') }}</a>
+      <h2 style="margin:0">{{ _('manage_comics') }}</h2>
+      <a href="{{ url_for('admin.create_comic') }}" class="btn btn-primary">+ {{ _('create') }}</a>
     </div>
     <table class="table">
       <thead>
         <tr>
-          <th>ID</th>
+          <th>{{ _('cover') }}</th>
           <th>{{ _('title') }}</th>
-          <th>{{ _('type') }}</th>
-          <th>{{ _('chapters') }}</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>NSFW</th>
           <th>{{ _('views') }}</th>
+          <th>{{ _('chapters') }}</th>
           <th>{{ _('actions') }}</th>
         </tr>
       </thead>
       <tbody>
         {% for comic in comics %}
         <tr>
-          <td>{{ comic.id }}</td>
-          <td>{{ comic.title_en }}</td>
-          <td><span class="tag">{{ comic.type }}</span></td>
-          <td>{{ comic.chapters.count() }}</td>
+          <td><img src="{{ comic.cover }}" style="width:32px;height:44px;object-fit:cover;border-radius:4px" onerror="this.style.display='none'"></td>
+          <td><strong>{{ comic.title_en[:40] }}</strong></td>
+          <td>{{ comic.type }}</td>
+          <td>{{ comic.status }}</td>
+          <td>{{ '🔞' if comic.nsfw else '—' }}</td>
           <td>{{ comic.views }}</td>
-          <td>
-            <a href="{{ url_for('admin.edit_comic', id=comic.id) }}" class="btn btn-ghost" style="padding:4px 12px;font-size:12px">{{ _('edit') }}</a>
-            <a href="{{ url_for('admin.chapters', comic_id=comic.id) }}" class="btn btn-ghost" style="padding:4px 12px;font-size:12px">{{ _('chapters') }}</a>
-            <form method="POST" action="{{ url_for('admin.delete_comic', id=comic.id) }}" style="display:inline" onsubmit="return confirm('Delete?')">
-              <button type="submit" class="btn btn-danger" style="padding:4px 12px;font-size:12px">{{ _('delete') }}</button>
+          <td>{{ comic.chapters.count() }}</td>
+          <td style="display:flex;gap:4px;flex-wrap:wrap">
+            <a href="{{ url_for('admin.edit_comic', id=comic.id) }}" class="btn btn-ghost" style="padding:4px 8px;font-size:11px">{{ _('edit') }}</a>
+            <a href="{{ url_for('admin.toggle_nsfw', id=comic.id) }}" class="btn btn-ghost" style="padding:4px 8px;font-size:11px">{{ 'SFW' if comic.nsfw else 'NSFW' }}</a>
+            <a href="{{ url_for('admin.chapters', comic_id=comic.id) }}" class="btn btn-ghost" style="padding:4px 8px;font-size:11px">{{ _('chapters') }}</a>
+            <a href="{{ url_for('admin.transfer_comic', id=comic.id) }}" class="btn btn-ghost" style="padding:4px 8px;font-size:11px">Transfer</a>
+            <form method="POST" action="{{ url_for('admin.delete_comic', id=comic.id) }}" style="display:inline" onsubmit="return confirm('Delete {{ comic.title_en }}?')">
+              <button type="submit" class="btn btn-danger" style="padding:4px 8px;font-size:11px">{{ _('delete') }}</button>
             </form>
           </td>
         </tr>
