@@ -126,6 +126,7 @@ def init_db():
                 for table, cols in {
                     'user': [('is_banned', 'BOOLEAN DEFAULT FALSE'), ('is_verified', 'BOOLEAN DEFAULT FALSE'), ('warning_count', 'INTEGER DEFAULT 0'), ('suspension_until', 'TIMESTAMP')],
                     'comic': [('nsfw', 'BOOLEAN DEFAULT FALSE')],
+                    'chapter': [('is_draft', 'BOOLEAN DEFAULT FALSE')],
                 }.items():
                     existing = [c['name'] for c in inspector.get_columns(table)]
                     for col_name, col_type in cols:

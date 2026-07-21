@@ -146,6 +146,35 @@ def delete_comment(id):
     db.session.commit()
     return jsonify({'ok': True})
 
+@api_bp.route('/comic/<int:comic_id>/upload-cover', methods=['POST'])
+@login_required
+def upload_comic_cover(comic_id):
+    from app import save_upload, allowed_file
+    comic = Comic.query.get_or_404(comic_id)
+    if not current_user.is_admin and (not current_user.is_author or comic.author_id != current_user.id):
+        return jsonify({'error': 'Unauthorized'}), 403
+    file = request.files.get('cover_file')
+    if file and allowed_file(file.filename):
+        url = save_upload(file, 'covers')
+        if url:
+            comic.cover = url
+            db.session.commit()
+            return jsonify({'url': url})
+    return jsonify({'error': 'Upload failed'}), 400
+
+@api_bp.route('/upload-avatar', methods=['POST'])
+@login_required
+def upload_avatar():
+    from app import save_upload, allowed_file
+    file = request.files.get('file')
+    if file and allowed_file(file.filename):
+        url = save_upload(file, 'covers')
+        if url:
+            current_user.avatar = url
+            db.session.commit()
+            return jsonify({'url': url})
+    return jsonify({'error': 'Upload failed'}), 400
+
 @api_bp.route('/profile/update', methods=['POST'])
 @login_required
 def update_profile():

@@ -157,11 +157,12 @@ def create_chapter(comic_id):
             number=float(request.form['number']),
             title_en=request.form['title_en'],
             title_id=request.form['title_id'],
-            pages=json.dumps(pages) if pages else pages_input
+            pages=json.dumps(pages) if pages else pages_input,
+            is_draft='is_draft' in request.form
         )
         db.session.add(chapter)
         db.session.commit()
-        flash('Chapter created!', 'success')
+        flash('Chapter created!' + (' (Draft)' if chapter.is_draft else ''), 'success')
         return redirect(url_for('author.chapters', comic_id=comic_id))
     return render_template('author/chapter_form.html', comic=comic, chapter=None)
 
@@ -179,6 +180,7 @@ def edit_chapter(id):
         chapter.number = float(request.form['number'])
         chapter.title_en = request.form['title_en']
         chapter.title_id = request.form['title_id']
+        chapter.is_draft = 'is_draft' in request.form
         pages = []
         page_files = request.files.getlist('page_files')
         for pf in page_files:

@@ -8,6 +8,7 @@
            class="profile-avatar" alt="" id="profileAvatar">
       {% if current_user.id == profile_user.id %}
       <label for="avatarUpload" style="position:absolute;bottom:4px;right:4px;background:var(--accent);color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;border:2px solid var(--bg-card)">📷</label>
+      <input type="file" id="avatarUpload" accept="image/*" style="display:none">
       {% endif %}
     </div>
     <div style="display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px">
@@ -126,23 +127,13 @@ document.getElementById('avatarUpload')?.addEventListener('change', function(e) 
   if (!file) return;
   const fd = new FormData();
   fd.append('file', file);
-  fd.append('type', 'covers');
-  fetch('/admin/upload-image', { method: 'POST', body: fd })
-    .then(r => r.text())
-    .then(() => {
-      fd.delete('type');
-      fd.append('type', 'covers');
-      const fr = new FileReader();
-      fr.onload = function(ev) {
-        const url = ev.target.result;
-        document.getElementById('profileAvatar').src = url;
-        const fd2 = new FormData();
-        fd2.append('avatar', url);
-        fd2.append('bio', document.querySelector('[name=bio]')?.value || '');
-        fd2.append('language', '{{ profile_user.language }}');
-        fetch('/api/profile/update', { method: 'POST', body: new URLSearchParams(fd2) });
-      };
-      fr.readAsDataURL(file);
+  fetch('/api/upload-avatar', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      if (data.url) {
+        document.getElementById('profileAvatar').src = data.url;
+        showToast('Avatar updated!', 'success');
+      }
     });
 });
 </script>

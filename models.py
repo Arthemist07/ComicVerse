@@ -134,6 +134,7 @@ class Chapter(db.Model):
     title_id = db.Column(db.String(200), default='')
     pages = db.Column(db.Text, default='[]')
     views = db.Column(db.Integer, default=0)
+    is_draft = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     __table_args__ = (db.UniqueConstraint('comic_id', 'number'),)

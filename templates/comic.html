@@ -4,7 +4,12 @@
 <div class="comic-detail">
   <div class="comic-header">
     <div class="comic-header-content">
-      <img src="{{ comic.cover }}" class="comic-cover" alt="{{ comic.title_en }}" onerror="this.src='https://via.placeholder.com/240x360?text=No+Cover'">
+      <div style="position:relative;display:inline-block">
+        <img src="{{ comic.cover }}" class="comic-cover" alt="{{ comic.title_en }}" onerror="this.src='https://via.placeholder.com/240x360?text=No+Cover'">
+        {% if current_user.is_authenticated and (current_user.is_admin or (current_user.is_author and comic.author_id == current_user.id)) %}
+        <label for="coverUploadInput" style="position:absolute;bottom:8px;right:8px;background:var(--accent);color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;border:2px solid var(--bg-card);box-shadow:0 2px 8px rgba(0,0,0,0.4)">📷</label>
+        {% endif %}
+      </div>
       <div class="comic-info">
         <h1>{{ comic.title_en if session.get('language') == 'en' else comic.title_id }}</h1>
         <div class="comic-tags">
@@ -29,7 +34,7 @@
             <div class="comic-stat-label">{{ _('rating') }}</div>
           </div>
         </div>
-        <div style="display:flex;gap:12px">
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
           {% if chapters %}
           <a href="{{ url_for('comic.reader', comic_id=comic.id, chapter_id=chapters|last) }}" class="btn btn-primary">
             {{ _('first_chapter') }}
@@ -41,6 +46,18 @@
           <button class="btn btn-ghost" onclick="toggleFavorite({{ comic.id }}, this)">
             ♡ {{ _('add_to_favorites') }}
           </button>
+          {% if current_user.is_authenticated and (current_user.is_admin or (current_user.is_author and comic.author_id == current_user.id)) %}
+          <div style="display:flex;gap:6px;width:100%;margin-top:8px;flex-wrap:wrap">
+            <a href="{{ url_for('admin.edit_comic', id=comic.id) if current_user.is_admin else url_for('author.edit_comic', id=comic.id) }}" class="btn btn-ghost" style="padding:6px 14px;font-size:12px">✏️ Edit Comic</a>
+            {% set create_chapter_url = url_for('admin.create_chapter', comic_id=comic.id) if current_user.is_admin else url_for('author.create_chapter', comic_id=comic.id) %}
+            <a href="{{ create_chapter_url }}" class="btn btn-primary" style="padding:6px 14px;font-size:12px">+ Add Chapter</a>
+            {% if current_user.is_admin %}
+            <form method="POST" action="{{ url_for('admin.delete_comic', id=comic.id) }}" style="display:inline" onsubmit="return confirm('Delete this comic permanently?')">
+              <button type="submit" class="btn btn-danger" style="padding:6px 14px;font-size:12px">🗑️ Delete</button>
+            </form>
+            {% endif %}
+          </div>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -51,20 +68,31 @@
     {% if chapters %}
     <div style="display:grid;gap:8px">
       {% for ch in chapters %}
-      <a href="{{ url_for('comic.reader', comic_id=comic.id, chapter_id=ch.id) }}"
-         style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--bg-card);border-radius:var(--radius-sm);text-decoration:none;color:var(--text-primary);border:1px solid var(--border);transition:var(--transition)">
-        <div>
-          <strong>{{ _('ch') }} {{ ch.number }}</strong>
-          {% if session.get('language') == 'en' and ch.title_en %}
-          <span style="color:var(--text-secondary);font-size:14px;margin-left:8px">- {{ ch.title_en }}</span>
-          {% elif ch.title_id %}
-          <span style="color:var(--text-secondary);font-size:14px;margin-left:8px">- {{ ch.title_id }}</span>
-          {% endif %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid {{ 'var(--warning)' if ch.is_draft else 'var(--border)' }};transition:var(--transition)">
+        <a href="{{ url_for('comic.reader', comic_id=comic.id, chapter_id=ch.id) }}" style="flex:1;text-decoration:none;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <strong>{{ _('ch') }} {{ ch.number }}</strong>
+            {% if ch.is_draft %}<span style="background:var(--warning);color:#000;font-size:10px;padding:1px 6px;border-radius:4px;margin-left:6px;font-weight:600">DRAFT</span>{% endif %}
+            {% if session.get('language') == 'en' and ch.title_en %}
+            <span style="color:var(--text-secondary);font-size:14px;margin-left:8px">- {{ ch.title_en }}</span>
+            {% elif ch.title_id %}
+            <span style="color:var(--text-secondary);font-size:14px;margin-left:8px">- {{ ch.title_id }}</span>
+            {% endif %}
+          </div>
+          <div style="font-size:13px;color:var(--text-secondary)">
+            {{ ch.created_at.strftime('%Y-%m-%d') if ch.created_at else '' }}
+          </div>
+        </a>
+        {% if current_user.is_authenticated and (current_user.is_admin or (current_user.is_author and comic.author_id == current_user.id)) %}
+        <div style="display:flex;gap:4px;margin-left:12px">
+          {% set edit_chapter_url = url_for('admin.edit_chapter', id=ch.id) if current_user.is_admin else url_for('author.edit_chapter', id=ch.id) %}
+          <a href="{{ edit_chapter_url }}" class="btn btn-ghost" style="padding:4px 8px;font-size:11px">✏️</a>
+          <form method="POST" action="{{ url_for('admin.delete_chapter', id=ch.id) if current_user.is_admin else url_for('author.delete_chapter', id=ch.id) }}" style="display:inline" onsubmit="return confirm('Delete chapter?')">
+            <button type="submit" class="btn btn-danger" style="padding:4px 8px;font-size:11px">🗑️</button>
+          </form>
         </div>
-        <div style="font-size:13px;color:var(--text-secondary)">
-          {{ ch.created_at.strftime('%Y-%m-%d') if ch.created_at else '' }}
-        </div>
-      </a>
+        {% endif %}
+      </div>
       {% endfor %}
     </div>
     {% else %}
@@ -106,6 +134,11 @@
     </div>
   </div>
 </div>
+
+<form id="coverUploadForm" method="POST" enctype="multipart/form-data" style="display:none">
+  <input type="file" id="coverUploadInput" name="cover_file" accept="image/*" onchange="uploadComicCover({{ comic.id }})">
+</form>
+
 <script>
 function loadComments(comicId) {
   fetch('/api/comic/' + comicId + '/comments').then(r => r.json()).then(comments => {
@@ -114,7 +147,6 @@ function loadComments(comicId) {
   });
 }
 function renderComment(c, comicId) {
-  const isOwner = currentUser ? true : false;
   return '<div style="padding:12px 0;border-bottom:1px solid var(--border)">' +
     (c.is_pinned ? '<span style="font-size:11px;color:var(--accent)">📌 Pinned</span>' : '') +
     '<div style="display:flex;gap:8px;align-items:start">' +
@@ -169,6 +201,18 @@ function deleteComment(id) {
   fetch('/api/comment/' + id + '/delete', {method: 'POST'}).then(r => r.json()).then(d => {
     if (d.ok) location.reload();
   });
+}
+function uploadComicCover(comicId) {
+  const input = document.getElementById('coverUploadInput');
+  const file = input.files[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('cover_file', file);
+  fetch('/api/comic/' + comicId + '/upload-cover', { method: 'POST', body: fd })
+    .then(r => r.json()).then(d => {
+      if (d.url) location.reload();
+      else alert('Upload failed');
+    });
 }
 loadComments({{ comic.id }});
 </script>

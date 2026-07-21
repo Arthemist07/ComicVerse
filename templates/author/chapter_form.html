@@ -1,38 +1,45 @@
 {% extends "base.html" %}
-{% block title %}Add Chapter{% endblock %}
+{% block title %}{% if chapter %}Edit{% else %}Add{% endif %} Chapter{% endblock %}
 {% block content %}
 <div class="admin-layout">
   <div class="admin-sidebar">
     <a href="{{ url_for('author.dashboard') }}">My Comics</a>
     <a href="{{ url_for('author.create_comic') }}">Create Comic</a>
+    <a href="{{ url_for('author.manage_genres') }}">Genres</a>
   </div>
   <div class="admin-content">
     <h2 style="margin-bottom:8px">{% if chapter %}Edit{% else %}Add{% endif %} Chapter - {{ comic.title_en }}</h2>
     <a href="{{ url_for('author.chapters', comic_id=comic.id) }}" style="color:var(--accent);font-size:14px;display:inline-block;margin-bottom:24px">← Back to Chapters</a>
-    <form method="POST" enctype="multipart/form-data" style="max-width:600px">
+    <form method="POST" enctype="multipart/form-data" style="max-width:700px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div class="form-group"><label>Chapter Number</label><input type="number" step="0.5" name="number" class="form-input" value="{{ chapter.number if chapter else '' }}" required></div>
         <div class="form-group"><label>Title (EN)</label><input type="text" name="title_en" class="form-input" value="{{ chapter.title_en if chapter else '' }}"></div>
       </div>
       <div class="form-group"><label>Title (ID)</label><input type="text" name="title_id" class="form-input" value="{{ chapter.title_id if chapter else '' }}"></div>
-      {% if chapter %}
+      <div class="form-group">
+        <label>Upload Pages (images)</label>
+        <input type="file" name="page_files" multiple accept="image/*" class="form-input" style="padding:8px">
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">Select multiple images. Supported: PNG, JPG, WebP</div>
+      </div>
+      {% if chapter and chapter.pages %}
       <div class="form-group">
         <label>Current Pages <span style="color:var(--text-secondary);font-size:12px">({{ chapter.pages|page_count }} pages)</span></label>
-        <div style="background:var(--bg);padding:8px;border-radius:4px;font-size:12px;color:var(--text-secondary);max-height:100px;overflow-y:auto;word-break:break-all">
+        <div style="display:flex;gap:4px;flex-wrap:wrap;max-height:120px;overflow-y:auto;padding:8px;background:var(--bg);border-radius:6px;margin-top:4px">
           {% for p in chapter.pages|from_json %}
-          <div>{{ p }}</div>
+          <img src="{{ p }}" style="width:50px;height:70px;object-fit:cover;border-radius:4px;border:1px solid var(--border)">
           {% endfor %}
         </div>
       </div>
       {% endif %}
       <div class="form-group">
-        <label>Upload Pages (images)</label>
-        <input type="file" name="page_files" multiple accept="image/*" class="form-input" style="padding:8px">
-        <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">Select multiple images at once. New uploads will REPLACE existing pages if no URLs below.</div>
-      </div>
-      <div class="form-group">
         <label>Or paste page URLs (one per line)</label>
-        <textarea name="pages" class="form-textarea" rows="6" placeholder="https://example.com/page1.jpg">{% if chapter %}{{ chapter.pages|from_json|join('\n') }}{% endif %}</textarea>
+        <textarea name="pages" class="form-textarea" rows="6" placeholder="https://example.com/page1.jpg">{% if chapter and chapter.pages %}{{ chapter.pages|from_json|join('\n') }}{% endif %}</textarea>
+      </div>
+      <div style="display:flex;gap:16px;align-items:center;margin-bottom:16px">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" name="is_draft" value="1" {% if chapter and chapter.is_draft %}checked{% endif %}>
+          <span style="font-size:14px">💾 Save as Draft</span>
+        </label>
       </div>
       <button type="submit" class="btn btn-primary">{% if chapter %}Update{% else %}Save{% endif %} Chapter</button>
     </form>

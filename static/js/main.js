@@ -190,11 +190,59 @@ function insertPageUrls() {
   showToast(`Added ${urls.length} pages`);
 }
 
+// User Menu
+function toggleUserMenu() {
+  document.getElementById('userDropdown').classList.toggle('show');
+}
+
+// Search overlay
+function toggleSearch() {
+  const overlay = document.getElementById('searchOverlay');
+  const isHidden = overlay.style.display === 'none' || overlay.style.display === '';
+  overlay.style.display = isHidden ? 'flex' : 'none';
+  if (isHidden) setTimeout(() => document.getElementById('searchInput')?.focus(), 100);
+  document.getElementById('searchResults').innerHTML = '';
+}
+
+function searchComics(q) {
+  clearTimeout(searchTimeout);
+  const results = document.getElementById('searchResults');
+  if (q.length < 2) { results.innerHTML = ''; return; }
+  searchTimeout = setTimeout(() => {
+    fetch(`/api/search?q=${encodeURIComponent(q)}`)
+      .then(r => r.json())
+      .then(data => {
+        results.innerHTML = data.map(c => `
+          <a href="/comic/${c.id}" class="search-result-item" onclick="toggleSearch()">
+            <img src="${c.cover}" onerror="this.style.display='none'">
+            <div>
+              <strong>${c.title_en}</strong>
+              <div style="font-size:12px;color:var(--text-secondary)">${c.type} • ⭐ ${c.rating}</div>
+            </div>
+          </a>
+        `).join('') || '<div style="color:var(--text-secondary);text-align:center;padding:20px">No comics found</div>';
+      });
+  }, 300);
+}
+
+// Overlay close on Escape and outside click
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    document.getElementById('searchOverlay').style.display = 'none';
+    document.getElementById('userDropdown')?.classList.remove('show');
+  }
+});
+
 // Auto-close dropdowns on click outside
 document.addEventListener('click', function(e) {
   const notifBtn = document.getElementById('notifBtn');
   const dropdown = document.getElementById('notifDropdown');
   if (notifBtn && dropdown && !notifBtn.contains(e.target) && !dropdown.contains(e.target)) {
     dropdown.classList.remove('show');
+  }
+  const userBtn = document.querySelector('.user-menu-btn');
+  const userDropdown = document.getElementById('userDropdown');
+  if (userBtn && userDropdown && !userBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+    userDropdown.classList.remove('show');
   }
 });

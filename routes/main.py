@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, session, redirect, url_for
+from flask import Blueprint, render_template, request, session, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 from models import db, Comic, Genre, ComicGenre, User, Changelog, Notification, ReadHistory, Announcement
 from sqlalchemy import desc
@@ -66,6 +66,22 @@ def my_profile():
 def history():
     history = ReadHistory.query.filter_by(user_id=current_user.id).order_by(ReadHistory.read_at.desc()).all()
     return render_template('history.html', history=history)
+
+@main_bp.route('/api/search')
+def api_search():
+    q = request.args.get('q', '').strip()
+    if len(q) < 2:
+        return jsonify([])
+    comics = Comic.query.filter(
+        Comic.title_en.contains(q) | Comic.title_id.contains(q)
+    ).order_by(Comic.views.desc()).limit(10).all()
+    return jsonify([{
+        'id': c.id,
+        'title_en': c.title_en,
+        'cover': c.cover,
+        'type': c.type,
+        'rating': c.rating
+    } for c in comics])
 
 @main_bp.route('/changelog')
 def changelog():
