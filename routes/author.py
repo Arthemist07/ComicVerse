@@ -43,10 +43,15 @@ def create_comic():
     from app import save_upload, allowed_file
     genres = Genre.query.all()
     if request.method == 'POST':
-        cover_url = request.form.get('cover', '')
+        cover_url = 'default_cover.png'
         cover_file = request.files.get('cover_file')
         if cover_file and allowed_file(cover_file.filename):
             cover_url = save_upload(cover_file, 'covers') or cover_url
+
+        banner_url = ''
+        banner_file = request.files.get('banner_file')
+        if banner_file and allowed_file(banner_file.filename):
+            banner_url = save_upload(banner_file, 'covers') or banner_url
 
         comic = Comic(
             title_en=request.form['title_en'],
@@ -58,7 +63,8 @@ def create_comic():
             author=request.form.get('author', current_user.username),
             artist=request.form.get('artist', ''),
             rating=float(request.form.get('rating', 0)),
-            cover=cover_url or 'default_cover.png',
+            cover=cover_url,
+            banner=banner_url,
             author_id=current_user.id
         )
         db.session.add(comic)
@@ -89,11 +95,13 @@ def edit_comic(id):
         comic.status = request.form['status']
         comic.rating = float(request.form.get('rating', 0))
 
-        cover_url = request.form.get('cover', comic.cover)
         cover_file = request.files.get('cover_file')
         if cover_file and allowed_file(cover_file.filename):
-            cover_url = save_upload(cover_file, 'covers') or cover_url
-        comic.cover = cover_url
+            comic.cover = save_upload(cover_file, 'covers') or comic.cover
+
+        banner_file = request.files.get('banner_file')
+        if banner_file and allowed_file(banner_file.filename):
+            comic.banner = save_upload(banner_file, 'covers') or comic.banner
 
         ComicGenre.query.filter_by(comic_id=comic.id).delete()
         for gid in request.form.getlist('genres'):
@@ -146,18 +154,12 @@ def create_chapter(comic_id):
                 url = save_upload(pf, 'pages')
                 if url:
                     pages.append(url)
-        pages_input = request.form.get('pages', '[]')
-        try:
-            extra_pages = json.loads(pages_input)
-            pages.extend(extra_pages)
-        except:
-            pass
         chapter = Chapter(
             comic_id=comic_id,
             number=float(request.form['number']),
             title_en=request.form['title_en'],
             title_id=request.form['title_id'],
-            pages=json.dumps(pages) if pages else pages_input,
+            pages=json.dumps(pages) if pages else '[]',
             is_draft='is_draft' in request.form
         )
         db.session.add(chapter)
@@ -181,21 +183,15 @@ def edit_chapter(id):
         chapter.title_en = request.form['title_en']
         chapter.title_id = request.form['title_id']
         chapter.is_draft = 'is_draft' in request.form
-        pages = []
         page_files = request.files.getlist('page_files')
+        new_pages = []
         for pf in page_files:
             if pf and allowed_file(pf.filename):
                 url = save_upload(pf, 'pages')
                 if url:
-                    pages.append(url)
-        pages_input = request.form.get('pages', '[]')
-        try:
-            extra_pages = json.loads(pages_input)
-            pages.extend(extra_pages)
-        except:
-            pass
-        if pages:
-            chapter.pages = json.dumps(pages)
+                    new_pages.append(url)
+        if new_pages:
+            chapter.pages = json.dumps(new_pages)
         db.session.commit()
         flash('Chapter updated!', 'success')
         return redirect(url_for('author.chapters', comic_id=comic.id))

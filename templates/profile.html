@@ -86,10 +86,6 @@
         <textarea name="bio" class="form-textarea">{{ profile_user.bio }}</textarea>
       </div>
       <div class="form-group">
-        <label>Avatar URL</label>
-        <input type="text" name="avatar" class="form-input" value="{{ profile_user.avatar if profile_user.avatar and profile_user.avatar != 'default.png' else '' }}" placeholder="https://example.com/avatar.jpg">
-      </div>
-      <div class="form-group">
         <label>{{ _('language') }}</label>
         <select name="language" class="form-select">
           <option value="en" {% if profile_user.language == 'en' %}selected{% endif %}>English</option>
@@ -113,7 +109,7 @@ function editProfile() {
 document.getElementById('profileForm').addEventListener('submit', function(e) {
   e.preventDefault();
   const fd = new FormData(this);
-  fetch('/api/profile/update', { method: 'POST', body: new URLSearchParams(fd) })
+  fetch('/api/profile/update', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(() => { location.reload(); });
 });

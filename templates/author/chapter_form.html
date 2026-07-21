@@ -31,10 +31,7 @@
         </div>
       </div>
       {% endif %}
-      <div class="form-group">
-        <label>Or paste page URLs (one per line)</label>
-        <textarea name="pages" class="form-textarea" rows="6" placeholder="https://example.com/page1.jpg">{% if chapter and chapter.pages %}{{ chapter.pages|from_json|join('\n') }}{% endif %}</textarea>
-      </div>
+      <input type="hidden" name="pages" value="[]">
       <div style="display:flex;gap:16px;align-items:center;margin-bottom:16px">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
           <input type="checkbox" name="is_draft" value="1" {% if chapter and chapter.is_draft %}checked{% endif %}>

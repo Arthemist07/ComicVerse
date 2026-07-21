@@ -96,17 +96,15 @@
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div class="form-group">
-          <label>Cover URL <span style="color:var(--text-secondary);font-size:12px">(or upload)</span></label>
-          <input type="text" name="cover" class="form-input" value="{{ comic.cover if comic else '' }}" placeholder="https://">
-          <input type="file" name="cover_file" class="form-input" accept="image/*" style="margin-top:6px;padding:8px">
+          <label>Cover Image</label>
+          <input type="file" name="cover_file" class="form-input" accept="image/*" style="padding:8px">
           {% if comic and comic.cover and comic.cover != 'default_cover.png' %}
           <div style="margin-top:4px"><img src="{{ comic.cover }}" style="width:60px;height:80px;object-fit:cover;border-radius:4px"></div>
           {% endif %}
         </div>
         <div class="form-group">
-          <label>Banner URL <span style="color:var(--text-secondary);font-size:12px">(or upload)</span></label>
-          <input type="text" name="banner" class="form-input" value="{{ comic.banner if comic else '' }}" placeholder="https://">
-          <input type="file" name="banner_file" class="form-input" accept="image/*" style="margin-top:6px;padding:8px">
+          <label>Banner Image</label>
+          <input type="file" name="banner_file" class="form-input" accept="image/*" style="padding:8px">
         </div>
       </div>
       <div class="form-group">

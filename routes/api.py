@@ -178,13 +178,16 @@ def upload_avatar():
 @api_bp.route('/profile/update', methods=['POST'])
 @login_required
 def update_profile():
+    from app import save_upload, allowed_file
     current_user.bio = request.form.get('bio', current_user.bio)
     current_user.theme = request.form.get('theme', current_user.theme)
     current_user.language = request.form.get('language', current_user.language)
     current_user.custom_title = request.form.get('custom_title', current_user.custom_title)
-    avatar = request.form.get('avatar', '')
-    if avatar:
-        current_user.avatar = avatar
+    avatar_file = request.files.get('avatar_file')
+    if avatar_file and allowed_file(avatar_file.filename):
+        url = save_upload(avatar_file, 'covers')
+        if url:
+            current_user.avatar = url
     db.session.commit()
     return jsonify({'ok': True})
 

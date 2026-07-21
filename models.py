@@ -147,6 +147,8 @@ class ReadHistory(db.Model):
     chapter_id = db.Column(db.Integer, db.ForeignKey('chapter.id'))
     page = db.Column(db.Integer, default=0)
     read_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    comic = db.relationship('Comic', backref='read_history')
+    chapter = db.relationship('Chapter', backref='read_history')
 
 
 class Favorite(db.Model):
