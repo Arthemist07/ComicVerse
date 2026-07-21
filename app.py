@@ -97,13 +97,19 @@ def page_count(value):
     except:
         return 0
 
-with app.app_context():
-    db.create_all()
-    if not User.query.filter_by(is_admin=True).first():
-        admin = User(username='admin', email='admin@comic.com', is_admin=True)
-        admin.set_password('admin123')
-        db.session.add(admin)
-        db.session.commit()
+def init_db():
+    with app.app_context():
+        try:
+            db.create_all()
+            if not User.query.filter_by(is_admin=True).first():
+                admin = User(username='admin', email='admin@comic.com', is_admin=True)
+                admin.set_password('admin123')
+                db.session.add(admin)
+                db.session.commit()
+        except Exception as e:
+            print(f"DB init warning (will retry on first request): {e}")
+
+init_db()
 
 if __name__ == '__main__':
     import os

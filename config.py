@@ -5,7 +5,7 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-prod')
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'postgresql://...')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or os.environ.get('DATABASE_PUBLIC_URL') or 'sqlite:///comic.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     R2_ACCOUNT_ID = os.environ.get('R2_ACCOUNT_ID')
