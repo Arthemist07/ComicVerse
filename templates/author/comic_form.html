@@ -67,10 +67,11 @@
       <div class="form-group">
         <label>Genres</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
+          {% set comic_genre_ids = comic.genres|map(attribute='genre_id')|list if comic else [] %}
           {% for genre in genres %}
           <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer">
             <input type="checkbox" name="genres" value="{{ genre.id }}"
-              {% if comic and genre in [cg.genre for cg in comic.genres] %}checked{% endif %}>
+              {% if genre.id in comic_genre_ids %}checked{% endif %}>
             {{ genre.name_en }}
           </label>
           {% endfor %}
