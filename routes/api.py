@@ -58,12 +58,37 @@ def mark_all_read():
     db.session.commit()
     return jsonify({'ok': True})
 
+@api_bp.route('/chapter/complete', methods=['POST'])
+@login_required
+def complete_chapter():
+    data = request.get_json() or {}
+    comic_id = data.get('comic_id')
+    chapter_id = data.get('chapter_id')
+    if not comic_id or not chapter_id:
+        return jsonify({'error': 'Missing comic_id or chapter_id'}), 400
+    chapter = Chapter.query.get_or_404(chapter_id)
+    comic = Comic.query.get_or_404(comic_id)
+    existing = ReadHistory.query.filter_by(user_id=current_user.id, chapter_id=chapter_id).first()
+    if not existing:
+        ReadHistory.query.filter_by(user_id=current_user.id, comic_id=comic_id, chapter_id=chapter_id).delete()
+        db.session.add(ReadHistory(user_id=current_user.id, comic_id=comic_id, chapter_id=chapter_id))
+        current_user.add_xp(10)
+        current_user.update_streak()
+        db.session.commit()
+    return jsonify({
+        'ok': True,
+        'xp': current_user.xp,
+        'level': current_user.level,
+        'streak': current_user.streak
+    })
+
 @api_bp.route('/profile/update', methods=['POST'])
 @login_required
 def update_profile():
     current_user.bio = request.form.get('bio', current_user.bio)
     current_user.theme = request.form.get('theme', current_user.theme)
     current_user.language = request.form.get('language', current_user.language)
+    current_user.custom_title = request.form.get('custom_title', current_user.custom_title)
     avatar = request.form.get('avatar', '')
     if avatar:
         current_user.avatar = avatar

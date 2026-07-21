@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Roles & Tags{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <a href="{{ url_for('admin.dashboard') }}">{{ _('dashboard') }}</a>
+    <a href="{{ url_for('admin.comics') }}">{{ _('manage_comics') }}</a>
+    <a href="{{ url_for('admin.manage_genres') }}">{{ _('manage_genres') }}</a>
+    <a href="{{ url_for('admin.manage_users') }}">{{ _('manage_users') }}</a>
+    <a href="{{ url_for('admin.settings') }}">{{ _('settings') }}</a>
+    <a href="{{ url_for('admin.manage_changelog') }}">{{ _('changelog') }}</a>
+    <a href="{{ url_for('admin.import_comic') }}">{{ _('import_comic') }}</a>
+    <a href="{{ url_for('admin.manage_levels') }}">Levels</a>
+    <a href="{{ url_for('admin.manage_roles') }}" class="active">Roles</a>
+    <a href="{{ url_for('admin.upload') }}">Upload Images</a>
+  </div>
+  <div class="admin-content">
+    <h2 style="margin-bottom:24px">Fun Roles & Tags</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+      <div style="background:var(--bg-card);border-radius:var(--radius);padding:24px;border:1px solid var(--border)">
+        <h3 style="margin-bottom:16px">Create Role</h3>
+        <form method="POST">
+          <input type="hidden" name="action" value="add">
+          <div class="form-group">
+            <label>Name</label>
+            <input type="text" name="name" class="form-input" required placeholder="e.g. Legendary Reader">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group">
+              <label>Color</label>
+              <input type="color" name="color" class="form-input" value="#6c5ce7" style="height:40px;padding:4px">
+            </div>
+            <div class="form-group">
+              <label>Icon</label>
+              <input type="text" name="icon" class="form-input" value="🏅" placeholder="🏅">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Create Role</button>
+        </form>
+      </div>
+      <div style="background:var(--bg-card);border-radius:var(--radius);padding:24px;border:1px solid var(--border)">
+        <h3 style="margin-bottom:16px">Assign to User</h3>
+        <form method="POST">
+          <input type="hidden" name="action" value="assign">
+          <div class="form-group">
+            <label>User</label>
+            <select name="user_id" class="form-select" required>
+              {% for u in users %}
+              <option value="{{ u.id }}">{{ u.username }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <select name="role_id" class="form-select" required>
+              {% for r in roles %}
+              <option value="{{ r.id }}">{{ r.icon }} {{ r.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Toggle Assignment</button>
+        </form>
+      </div>
+    </div>
+    <div style="margin-top:24px;background:var(--bg-card);border-radius:var(--radius);padding:24px;border:1px solid var(--border)">
+      <h3 style="margin-bottom:16px">Existing Roles</h3>
+      <table class="table">
+        <thead><tr><th>Icon</th><th>Name</th><th>Color</th><th>Members</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for r in roles %}
+          <tr>
+            <td style="font-size:20px">{{ r.icon }}</td>
+            <td><span style="color:{{ r.color }};font-weight:600">{{ r.name }}</span></td>
+            <td><span style="background:{{ r.color }};display:inline-block;width:20px;height:20px;border-radius:4px;vertical-align:middle"></span> {{ r.color }}</td>
+            <td>{{ r.assignments.count() }}</td>
+            <td>
+              <form method="POST" style="display:inline" onsubmit="return confirm('Delete role {{ r.name }}?')">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="id" value="{{ r.id }}">
+                <button type="submit" class="btn btn-ghost" style="padding:4px 8px;font-size:11px;color:var(--danger)">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

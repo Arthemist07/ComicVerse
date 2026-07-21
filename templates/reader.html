@@ -55,5 +55,25 @@ document.addEventListener('keydown', function(e) {
     pages[current + 1].scrollIntoView({ behavior: 'smooth' });
   }
 });
+
+let completed = false;
+function checkCompletion() {
+  if (completed) return;
+  const last = document.querySelector('.reader-page-img:last-of-type');
+  if (!last) return;
+  const rect = last.getBoundingClientRect();
+  if (rect.top < window.innerHeight + 100) {
+    completed = true;
+    fetch('/api/chapter/complete', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({comic_id: {{ comic.id }}, chapter_id: {{ chapter.id }}})
+    }).then(r => r.json()).then(d => {
+      if (d.ok) showToast('+10 XP | Level ' + d.level + ' | Streak: ' + d.streak + '🔥', 'success');
+    });
+  }
+}
+window.addEventListener('scroll', checkCompletion);
+checkCompletion();
 </script>
 {% endblock %}

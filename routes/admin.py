@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from functools import wraps
 from bs4 import BeautifulSoup
-from models import db, Comic, Chapter, Genre, ComicGenre, User, Changelog, Notification, SiteSettings
+from models import db, Comic, Chapter, Genre, ComicGenre, User, Changelog, Notification, SiteSettings, LevelConfig, UserRole, UserRoleAssignment
 from werkzeug.utils import secure_filename
 from app import save_upload, allowed_file
 
@@ -376,6 +376,86 @@ def toggle_author(user_id):
     db.session.commit()
     flash(f'User {user.username} author status: {user.is_author}', 'success')
     return redirect(url_for('admin.manage_users'))
+
+@admin_bp.route('/toggle-admin/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def toggle_admin(user_id):
+    if user_id == current_user.id:
+        flash('Cannot revoke your own admin', 'error')
+        return redirect(url_for('admin.manage_users'))
+    user = User.query.get_or_404(user_id)
+    user.is_admin = not user.is_admin
+    db.session.commit()
+    flash(f'User {user.username} admin status: {user.is_admin}', 'success')
+    return redirect(url_for('admin.manage_users'))
+
+@admin_bp.route('/levels', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def manage_levels():
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'add':
+            lv = int(request.form['level'])
+            xp = int(request.form['xp_required'])
+            title = request.form.get('title', '')
+            existing = LevelConfig.query.filter_by(level=lv).first()
+            if existing:
+                existing.xp_required = xp
+                existing.title = title
+            else:
+                db.session.add(LevelConfig(level=lv, xp_required=xp, title=title))
+            flash(f'Level {lv} saved', 'success')
+        elif action == 'delete':
+            LevelConfig.query.filter_by(id=int(request.form['id'])).delete()
+            flash('Level deleted', 'success')
+        elif action == 'defaults':
+            LevelConfig.query.delete()
+            defaults = [(1, 0), (2, 100), (3, 300), (4, 600), (5, 1000), (6, 1600), (7, 2400), (8, 3400), (9, 4600), (10, 6000)]
+            for lv, xp in defaults:
+                db.session.add(LevelConfig(level=lv, xp_required=xp))
+            flash('Default levels restored', 'success')
+        db.session.commit()
+        return redirect(url_for('admin.manage_levels'))
+    levels = LevelConfig.query.order_by(LevelConfig.level).all()
+    return render_template('admin/levels.html', levels=levels)
+
+@admin_bp.route('/roles', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def manage_roles():
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'add':
+            r = UserRole(name=request.form['name'], color=request.form.get('color', '#6c5ce7'), icon=request.form.get('icon', '🏅'))
+            db.session.add(r)
+            flash(f'Role "{r.name}" created', 'success')
+        elif action == 'edit':
+            role = UserRole.query.get_or_404(int(request.form['id']))
+            role.name = request.form['name']
+            role.color = request.form.get('color', role.color)
+            role.icon = request.form.get('icon', role.icon)
+            flash('Role updated', 'success')
+        elif action == 'delete':
+            UserRoleAssignment.query.filter_by(role_id=int(request.form['id'])).delete()
+            UserRole.query.filter_by(id=int(request.form['id'])).delete()
+            flash('Role deleted', 'success')
+        elif action == 'assign':
+            role = UserRole.query.get_or_404(int(request.form['role_id']))
+            user = User.query.get_or_404(int(request.form['user_id']))
+            existing = UserRoleAssignment.query.filter_by(user_id=user.id, role_id=role.id).first()
+            if existing:
+                db.session.delete(existing)
+                flash(f'Removed role from {user.username}', 'success')
+            else:
+                db.session.add(UserRoleAssignment(user_id=user.id, role_id=role.id))
+                flash(f'Assigned role to {user.username}', 'success')
+        db.session.commit()
+        return redirect(url_for('admin.manage_roles'))
+    roles = UserRole.query.all()
+    users = User.query.order_by(User.username).all()
+    return render_template('admin/roles.html', roles=roles, users=users)
 
 @admin_bp.route('/send-notification', methods=['POST'])
 @login_required

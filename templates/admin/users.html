@@ -10,6 +10,9 @@
     <a href="{{ url_for('admin.settings') }}">{{ _('settings') }}</a>
     <a href="{{ url_for('admin.manage_changelog') }}">{{ _('changelog') }}</a>
     <a href="{{ url_for('admin.import_comic') }}">{{ _('import_comic') }}</a>
+    <a href="{{ url_for('admin.manage_levels') }}">Levels</a>
+    <a href="{{ url_for('admin.manage_roles') }}">Roles</a>
+    <a href="{{ url_for('admin.upload') }}">Upload Images</a>
   </div>
   <div class="admin-content">
     <h2 style="margin-bottom:24px">{{ _('manage_users') }}</h2>
@@ -38,13 +41,18 @@
           <td>{{ '✅' if user.is_admin else '❌' }}</td>
           <td>{{ '✅' if user.is_author else '❌' }}</td>
           <td>
-            {% if not user.is_admin %}
+            <div style="display:flex;gap:4px;flex-wrap:wrap">
             <form method="POST" action="{{ url_for('admin.toggle_author', user_id=user.id) }}" style="display:inline">
               <button type="submit" class="btn btn-ghost" style="padding:4px 8px;font-size:11px">
                 {{ 'Revoke Author' if user.is_author else 'Make Author' }}
               </button>
             </form>
-            {% endif %}
+            <form method="POST" action="{{ url_for('admin.toggle_admin', user_id=user.id) }}" style="display:inline">
+              <button type="submit" class="btn btn-ghost" style="padding:4px 8px;font-size:11px;color:{{ 'var(--danger)' if user.is_admin else 'var(--accent)' }}">
+                {{ 'Revoke Admin' if user.is_admin else 'Make Admin' }}
+              </button>
+            </form>
+            </div>
           </td>
           <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '' }}</td>
         </tr>

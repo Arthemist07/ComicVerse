@@ -60,6 +60,12 @@ def profile(username):
 def my_profile():
     return redirect(url_for('main.profile', username=current_user.username))
 
+@main_bp.route('/history')
+@login_required
+def history():
+    history = ReadHistory.query.filter_by(user_id=current_user.id).order_by(ReadHistory.read_at.desc()).all()
+    return render_template('history.html', history=history)
+
 @main_bp.route('/changelog')
 def changelog():
     logs = Changelog.query.order_by(desc(Changelog.created_at)).all()

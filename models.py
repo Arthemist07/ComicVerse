@@ -24,9 +24,38 @@ class User(UserMixin, db.Model):
     is_author = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
+    xp = db.Column(db.Integer, default=0)
+    level = db.Column(db.Integer, default=1)
+    streak = db.Column(db.Integer, default=0)
+    last_read_date = db.Column(db.Date, nullable=True)
+    custom_title = db.Column(db.String(100), default='')
+
     history = db.relationship('ReadHistory', backref='user', lazy='dynamic')
     favorites = db.relationship('Favorite', backref='user', lazy='dynamic')
     notifications = db.relationship('Notification', backref='user', lazy='dynamic')
+    roles = db.relationship('UserRoleAssignment', backref='user', lazy='dynamic')
+
+    def add_xp(self, amount):
+        self.xp = (self.xp or 0) + amount
+        config = LevelConfig.query.order_by(LevelConfig.level.desc()).all()
+        while True:
+            req = LevelConfig.query.filter_by(level=self.level + 1).first()
+            if req and self.xp >= req.xp_required:
+                self.level += 1
+            else:
+                break
+
+    def update_streak(self):
+        from datetime import date, timedelta
+        today = date.today()
+        if self.last_read_date == today:
+            return
+        if self.last_read_date and self.last_read_date == today - timedelta(days=1):
+            self.streak = (self.streak or 0) + 1
+        else:
+            self.streak = 1
+        self.last_read_date = today
+
 
     followed = db.relationship('User', secondary=followers,
         primaryjoin=(followers.c.follower_id == id),
@@ -141,6 +170,26 @@ class Changelog(db.Model):
     content_id = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
+
+class UserRole(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    color = db.Column(db.String(20), default='#6c5ce7')
+    icon = db.Column(db.String(50), default='🏅')
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    assignments = db.relationship('UserRoleAssignment', backref='role', lazy='dynamic')
+
+class UserRoleAssignment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    role_id = db.Column(db.Integer, db.ForeignKey('user_role.id'))
+    assigned_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+class LevelConfig(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    level = db.Column(db.Integer, unique=True, nullable=False)
+    xp_required = db.Column(db.Integer, nullable=False)
+    title = db.Column(db.String(100), default='')
 
 class SiteSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
