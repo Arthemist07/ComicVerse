@@ -23,6 +23,7 @@
           <td>{{ ch.title_en or ch.title_id }}</td>
           <td>{{ ch.pages|page_count }}</td>
           <td>
+            <a href="{{ url_for('author.edit_chapter', id=ch.id) }}" class="btn btn-ghost" style="padding:4px 12px;font-size:12px">Edit</a>
             <form method="POST" action="{{ url_for('author.delete_chapter', id=ch.id) }}" style="display:inline" onsubmit="return confirm('Delete chapter?')">
               <button type="submit" class="btn btn-danger" style="padding:4px 12px;font-size:12px">Delete</button>
             </form>

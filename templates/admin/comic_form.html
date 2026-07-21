@@ -16,6 +16,18 @@
   </div>
   <div class="admin-content">
     <h2 style="margin-bottom:24px">{{ _('edit_comic') if comic else _('create_comic') }}</h2>
+
+    {% if comic %}
+    <div style="margin-bottom:20px;padding:16px;background:var(--card-bg);border-radius:8px;border:1px solid var(--border)">
+      <strong>Quick Actions:</strong>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <a href="{{ url_for('admin.create_chapter', comic_id=comic.id) }}" class="btn btn-primary" style="padding:6px 16px;font-size:13px">+ Add Chapter</a>
+        <a href="{{ url_for('admin.chapters', comic_id=comic.id) }}" class="btn btn-ghost" style="padding:6px 16px;font-size:13px">Manage Chapters ({{ comic.chapters.count() }})</a>
+        <a href="{{ url_for('admin.comics') }}" class="btn btn-ghost" style="padding:6px 16px;font-size:13px">Back to Comics</a>
+      </div>
+    </div>
+    {% endif %}
+
     <form method="POST" enctype="multipart/form-data" style="max-width:700px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div class="form-group">

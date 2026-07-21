@@ -59,8 +59,9 @@ def create_comic():
             description_id=request.form['description_id'],
             type=request.form['type'],
             status=request.form['status'],
-            author=request.form['author'],
-            artist=request.form['artist'],
+            author=request.form.get('author', ''),
+            artist=request.form.get('artist', ''),
+            rating=float(request.form.get('rating', 0)),
             cover=cover_url or 'default_cover.png',
             banner=banner_url or '',
             author_id=current_user.id if not current_user.is_admin else None
@@ -71,8 +72,8 @@ def create_comic():
         for gid in request.form.getlist('genres'):
             db.session.add(ComicGenre(comic_id=comic.id, genre_id=int(gid)))
         db.session.commit()
-        flash('Comic created!', 'success')
-        return redirect(url_for('admin.comics'))
+        flash('Comic created! Add chapters now.', 'success')
+        return redirect(url_for('admin.edit_comic', id=comic.id))
     return render_template('admin/comic_form.html', genres=genres, comic=None)
 
 @admin_bp.route('/comic/edit/<int:id>', methods=['GET', 'POST'])
@@ -91,6 +92,7 @@ def edit_comic(id):
         comic.status = request.form['status']
         comic.author = request.form['author']
         comic.artist = request.form['artist']
+        comic.rating = float(request.form.get('rating', 0))
 
         cover_url = request.form.get('cover', comic.cover)
         cover_file = request.files.get('cover_file')
@@ -109,7 +111,7 @@ def edit_comic(id):
             db.session.add(ComicGenre(comic_id=comic.id, genre_id=int(gid)))
         db.session.commit()
         flash('Comic updated!', 'success')
-        return redirect(url_for('admin.comics'))
+        return redirect(url_for('admin.edit_comic', id=comic.id))
     return render_template('admin/comic_form.html', genres=genres, comic=comic)
 
 @admin_bp.route('/comic/delete/<int:id>', methods=['POST'])

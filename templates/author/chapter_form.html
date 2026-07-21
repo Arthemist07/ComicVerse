@@ -7,24 +7,34 @@
     <a href="{{ url_for('author.create_comic') }}">Create Comic</a>
   </div>
   <div class="admin-content">
-    <h2 style="margin-bottom:8px">Add Chapter - {{ comic.title_en }}</h2>
+    <h2 style="margin-bottom:8px">{% if chapter %}Edit{% else %}Add{% endif %} Chapter - {{ comic.title_en }}</h2>
     <a href="{{ url_for('author.chapters', comic_id=comic.id) }}" style="color:var(--accent);font-size:14px;display:inline-block;margin-bottom:24px">← Back to Chapters</a>
     <form method="POST" enctype="multipart/form-data" style="max-width:600px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-        <div class="form-group"><label>Chapter Number</label><input type="number" step="0.5" name="number" class="form-input" required></div>
-        <div class="form-group"><label>Title (EN)</label><input type="text" name="title_en" class="form-input"></div>
+        <div class="form-group"><label>Chapter Number</label><input type="number" step="0.5" name="number" class="form-input" value="{{ chapter.number if chapter else '' }}" required></div>
+        <div class="form-group"><label>Title (EN)</label><input type="text" name="title_en" class="form-input" value="{{ chapter.title_en if chapter else '' }}"></div>
       </div>
-      <div class="form-group"><label>Title (ID)</label><input type="text" name="title_id" class="form-input"></div>
+      <div class="form-group"><label>Title (ID)</label><input type="text" name="title_id" class="form-input" value="{{ chapter.title_id if chapter else '' }}"></div>
+      {% if chapter %}
+      <div class="form-group">
+        <label>Current Pages <span style="color:var(--text-secondary);font-size:12px">({{ chapter.pages|page_count }} pages)</span></label>
+        <div style="background:var(--bg);padding:8px;border-radius:4px;font-size:12px;color:var(--text-secondary);max-height:100px;overflow-y:auto;word-break:break-all">
+          {% for p in chapter.pages|from_json %}
+          <div>{{ p }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
       <div class="form-group">
         <label>Upload Pages (images)</label>
         <input type="file" name="page_files" multiple accept="image/*" class="form-input" style="padding:8px">
-        <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">Select multiple images at once. Supported: PNG, JPG, WebP</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">Select multiple images at once. New uploads will REPLACE existing pages if no URLs below.</div>
       </div>
       <div class="form-group">
         <label>Or paste page URLs (one per line)</label>
-        <textarea name="pages" class="form-textarea" rows="6" placeholder="https://example.com/page1.jpg"></textarea>
+        <textarea name="pages" class="form-textarea" rows="6" placeholder="https://example.com/page1.jpg">{% if chapter %}{{ chapter.pages|from_json|join('\n') }}{% endif %}</textarea>
       </div>
-      <button type="submit" class="btn btn-primary">Save Chapter</button>
+      <button type="submit" class="btn btn-primary">{% if chapter %}Update{% else %}Save{% endif %} Chapter</button>
     </form>
   </div>
 </div>

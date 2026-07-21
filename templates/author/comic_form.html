@@ -1,13 +1,25 @@
 {% extends "base.html" %}
-{% block title %}Create Comic{% endblock %}
+{% block title %}{% if comic %}Edit{% else %}Create{% endif %} Comic{% endblock %}
 {% block content %}
 <div class="admin-layout">
   <div class="admin-sidebar">
     <a href="{{ url_for('author.dashboard') }}">My Comics</a>
     <a href="{{ url_for('author.create_comic') }}" class="active">Create Comic</a>
+    <a href="{{ url_for('author.manage_genres') }}">Genres</a>
   </div>
   <div class="admin-content">
     <h2 style="margin-bottom:24px">{% if comic %}Edit{% else %}Create{% endif %} Comic</h2>
+
+    {% if comic %}
+    <div style="margin-bottom:20px;padding:16px;background:var(--card-bg);border-radius:8px;border:1px solid var(--border)">
+      <strong>Quick Actions:</strong>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <a href="{{ url_for('author.chapters', comic_id=comic.id) }}" class="btn btn-primary" style="padding:6px 16px;font-size:13px">+ Add Chapter</a>
+        <a href="{{ url_for('author.chapters', comic_id=comic.id) }}" class="btn btn-ghost" style="padding:6px 16px;font-size:13px">Manage Chapters ({{ comic.chapters.count() }})</a>
+      </div>
+    </div>
+    {% endif %}
+
     <form method="POST" enctype="multipart/form-data" style="max-width:700px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div class="form-group"><label>Title (EN)</label><input type="text" name="title_en" class="form-input" value="{{ comic.title_en if comic else '' }}" required></div>
@@ -37,18 +49,18 @@
         <div class="form-group">
           <label>Type</label>
           <select name="type" class="form-select">
-            <option value="manga">Manga</option>
-            <option value="manhwa">Manhwa</option>
-            <option value="manhua">Manhua</option>
-            <option value="novel">Novel</option>
+            <option value="manga" {% if comic and comic.type == 'manga' %}selected{% endif %}>Manga</option>
+            <option value="manhwa" {% if comic and comic.type == 'manhwa' %}selected{% endif %}>Manhwa</option>
+            <option value="manhua" {% if comic and comic.type == 'manhua' %}selected{% endif %}>Manhua</option>
+            <option value="novel" {% if comic and comic.type == 'novel' %}selected{% endif %}>Novel</option>
           </select>
         </div>
         <div class="form-group">
           <label>Status</label>
           <select name="status" class="form-select">
-            <option value="ongoing">Ongoing</option>
-            <option value="completed">Completed</option>
-            <option value="hiatus">Hiatus</option>
+            <option value="ongoing" {% if comic and comic.status == 'ongoing' %}selected{% endif %}>Ongoing</option>
+            <option value="completed" {% if comic and comic.status == 'completed' %}selected{% endif %}>Completed</option>
+            <option value="hiatus" {% if comic and comic.status == 'hiatus' %}selected{% endif %}>Hiatus</option>
           </select>
         </div>
         <div class="form-group">
@@ -56,13 +68,30 @@
           <input type="number" step="0.1" name="rating" class="form-input" value="{{ comic.rating if comic else '0' }}">
         </div>
       </div>
-      <div class="form-group">
-        <label>Cover Image <span style="color:var(--text-secondary);font-size:12px">(URL or upload)</span></label>
-        <input type="text" name="cover" class="form-input" value="{{ comic.cover if comic else '' }}" placeholder="Paste URL or upload below">
-        <input type="file" name="cover_file" class="form-input" accept="image/*" style="margin-top:6px;padding:8px">
-        {% if comic and comic.cover and comic.cover != 'default_cover.png' %}
-        <div style="margin-top:4px"><img src="{{ comic.cover }}" style="width:60px;height:80px;object-fit:cover;border-radius:4px"></div>
-        {% endif %}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label>Author</label>
+          <input type="text" name="author" class="form-input" value="{{ comic.author if comic else current_user.username }}">
+        </div>
+        <div class="form-group">
+          <label>Artist</label>
+          <input type="text" name="artist" class="form-input" value="{{ comic.artist if comic else '' }}">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label>Cover Image <span style="color:var(--text-secondary);font-size:12px">(URL or upload)</span></label>
+          <input type="text" name="cover" class="form-input" value="{{ comic.cover if comic else '' }}" placeholder="Paste URL">
+          <input type="file" name="cover_file" class="form-input" accept="image/*" style="margin-top:6px;padding:8px">
+          {% if comic and comic.cover and comic.cover != 'default_cover.png' %}
+          <div style="margin-top:4px"><img src="{{ comic.cover }}" style="width:60px;height:80px;object-fit:cover;border-radius:4px"></div>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          <label>Banner Image <span style="color:var(--text-secondary);font-size:12px">(URL or upload)</span></label>
+          <input type="text" name="banner" class="form-input" value="{{ comic.banner if comic else '' }}" placeholder="Paste URL">
+          <input type="file" name="banner_file" class="form-input" accept="image/*" style="margin-top:6px;padding:8px">
+        </div>
       </div>
       <div class="form-group">
         <label>Genres</label>
@@ -75,6 +104,9 @@
             {{ genre.name_en }}
           </label>
           {% endfor %}
+        </div>
+        <div style="margin-top:8px">
+          <a href="{{ url_for('author.manage_genres') }}" class="btn btn-ghost" style="padding:4px 12px;font-size:12px">+ Manage Genres</a>
         </div>
       </div>
       <button type="submit" class="btn btn-primary" style="padding:12px 32px">Save Comic</button>

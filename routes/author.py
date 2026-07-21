@@ -45,6 +45,7 @@ def create_comic():
             status=request.form['status'],
             author=request.form.get('author', current_user.username),
             artist=request.form.get('artist', ''),
+            rating=float(request.form.get('rating', 0)),
             cover=cover_url or 'default_cover.png',
             author_id=current_user.id
         )
@@ -53,8 +54,8 @@ def create_comic():
         for gid in request.form.getlist('genres'):
             db.session.add(ComicGenre(comic_id=comic.id, genre_id=int(gid)))
         db.session.commit()
-        flash('Comic created!', 'success')
-        return redirect(url_for('author.dashboard'))
+        flash('Comic created! Add chapters now.', 'success')
+        return redirect(url_for('author.edit_comic', id=comic.id))
     return render_template('author/comic_form.html', genres=genres, comic=None)
 
 @author_bp.route('/comic/edit/<int:id>', methods=['GET', 'POST'])
@@ -74,6 +75,7 @@ def edit_comic(id):
         comic.description_id = request.form.get('description_id', '')
         comic.type = request.form['type']
         comic.status = request.form['status']
+        comic.rating = float(request.form.get('rating', 0))
 
         cover_url = request.form.get('cover', comic.cover)
         cover_file = request.files.get('cover_file')
@@ -151,6 +153,40 @@ def create_chapter(comic_id):
         return redirect(url_for('author.chapters', comic_id=comic_id))
     return render_template('author/chapter_form.html', comic=comic, chapter=None)
 
+@author_bp.route('/chapter/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+@author_required
+def edit_chapter(id):
+    from app import save_upload, allowed_file
+    chapter = Chapter.query.get_or_404(id)
+    comic = chapter.comic
+    if comic.author_id != current_user.id and not current_user.is_admin:
+        flash('Not your comic', 'error')
+        return redirect(url_for('author.dashboard'))
+    if request.method == 'POST':
+        chapter.number = float(request.form['number'])
+        chapter.title_en = request.form['title_en']
+        chapter.title_id = request.form['title_id']
+        pages = []
+        page_files = request.files.getlist('page_files')
+        for pf in page_files:
+            if pf and allowed_file(pf.filename):
+                url = save_upload(pf, 'pages')
+                if url:
+                    pages.append(url)
+        pages_input = request.form.get('pages', '[]')
+        try:
+            extra_pages = json.loads(pages_input)
+            pages.extend(extra_pages)
+        except:
+            pass
+        if pages:
+            chapter.pages = json.dumps(pages)
+        db.session.commit()
+        flash('Chapter updated!', 'success')
+        return redirect(url_for('author.chapters', comic_id=comic.id))
+    return render_template('author/chapter_form.html', comic=comic, chapter=chapter)
+
 @author_bp.route('/chapter/delete/<int:id>', methods=['POST'])
 @login_required
 @author_required
@@ -165,3 +201,39 @@ def delete_chapter(id):
     db.session.commit()
     flash('Chapter deleted', 'success')
     return redirect(url_for('author.chapters', comic_id=cid))
+
+@author_bp.route('/genres')
+@login_required
+@author_required
+def manage_genres():
+    genres = Genre.query.order_by(Genre.name_en).all()
+    return render_template('author/genres.html', genres=genres)
+
+@author_bp.route('/genre/create', methods=['POST'])
+@login_required
+@author_required
+def create_genre():
+    name_en = request.form.get('name_en', '').strip()
+    name_id = request.form.get('name_id', '').strip()
+    if not name_en or not name_id:
+        flash('Both English and Indonesian names required', 'error')
+        return redirect(url_for('author.manage_genres'))
+    if Genre.query.filter_by(name_en=name_en).first():
+        flash('Genre already exists', 'error')
+        return redirect(url_for('author.manage_genres'))
+    g = Genre(name_en=name_en, name_id=name_id)
+    db.session.add(g)
+    db.session.commit()
+    flash(f'Genre "{name_en}" created!', 'success')
+    return redirect(url_for('author.manage_genres'))
+
+@author_bp.route('/genre/delete/<int:id>', methods=['POST'])
+@login_required
+@author_required
+def delete_genre(id):
+    genre = Genre.query.get_or_404(id)
+    ComicGenre.query.filter_by(genre_id=id).delete()
+    db.session.delete(genre)
+    db.session.commit()
+    flash('Genre deleted', 'success')
+    return redirect(url_for('author.manage_genres'))
