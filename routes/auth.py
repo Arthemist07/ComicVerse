@@ -30,7 +30,7 @@ def register():
         if User.query.filter_by(username=username).first():
             flash('Username already taken', 'error')
             return render_template('register.html')
-        user = User(username=username, email=email)
+        user = User(username=username, email=email, is_author=('is_author' in request.form))
         user.set_password(password)
         db.session.add(user)
         db.session.commit()

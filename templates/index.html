@@ -22,6 +22,18 @@
 </section>
 
 <div class="container">
+  {% if current_user.is_authenticated and current_user.is_admin %}
+  <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap">
+    <a href="{{ url_for('admin.create_comic') }}" class="btn btn-primary" style="padding:10px 20px">+ Create Comic</a>
+    <a href="{{ url_for('admin.import_comic') }}" class="btn btn-ghost" style="padding:10px 20px">📥 Import Comic</a>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-ghost" style="padding:10px 20px">⚙️ Admin Panel</a>
+  </div>
+  {% elif current_user.is_authenticated and current_user.is_author %}
+  <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap">
+    <a href="{{ url_for('author.create_comic') }}" class="btn btn-primary" style="padding:10px 20px">+ Create Comic</a>
+    <a href="{{ url_for('author.dashboard') }}" class="btn btn-ghost" style="padding:10px 20px">📝 Author Panel</a>
+  </div>
+  {% endif %}
   <div class="section-header">
     <h2 class="section-title">{{ _('trending') }}</h2>
     <a href="{{ url_for('comic.genres') }}" class="section-link">{{ _('view_all') }}</a>
