@@ -14,8 +14,6 @@ class Config:
     R2_BUCKET_NAME = os.environ.get('R2_BUCKET_NAME', 'comic-site')
     R2_PUBLIC_URL = os.environ.get('R2_PUBLIC_URL', 'https://pub-xxxxx.r2.dev')
 
-    BABEL_DEFAULT_LOCALE = 'en'
-    BABEL_SUPPORTED_LOCALES = ['en', 'id']
     LANGUAGES = {
         'en': 'English',
         'id': 'Bahasa Indonesia'

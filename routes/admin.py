@@ -273,11 +273,10 @@ def import_comic():
 
             # MangaDex API import
             if 'mangadex' in url or source == 'mangadex':
-                import re as _re
-                md_match = _re.search(r'(?:mangadex\.org/(?:title/)?)([a-f0-9\-]{36})', url)
+                md_match = re.search(r'(?:mangadex\.org/(?:title/)?)([a-f0-9\-]{36})', url)
                 if md_match:
                     md_id = md_match.group(1)
-                elif _re.match(r'^[a-f0-9\-]{36}$', url):
+                elif re.match(r'^[a-f0-9\-]{36}$', url):
                     md_id = url
                 else:
                     raise Exception('Could not extract MangaDex ID from URL')
@@ -310,11 +309,6 @@ def import_comic():
                         if cv_file:
                             cover = f'https://uploads.mangadex.org/covers/{md_id}/{cv_file}'
 
-                # Try to get chapters list
-                try:
-                    ch_resp = requests.get(f'https://api.mangadex.org/manga/{md_id}/feed?limit=5&translatedLanguage[]=en&order[chapter]=desc', headers=headers, timeout=10)
-                except:
-                    pass
             else:
                 # Generic import via HTML scraping
                 resp = requests.get(url, headers=headers, timeout=15)
@@ -352,7 +346,7 @@ def upload():
     pages = glob.glob(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads', 'pages', '*'))
     all_imgs = []
     for f in sorted(covers + pages, key=os.path.getmtime, reverse=True)[:24]:
-        rel = f.split('static\\uploads\\')[-1].replace('\\', '/')
+        rel = f.split(os.path.sep + 'static' + os.path.sep + 'uploads' + os.path.sep)[-1].replace(os.path.sep, '/')
         all_imgs.append(f'/static/uploads/{rel}')
     return render_template('admin/upload.html', recent_images=all_imgs)
 

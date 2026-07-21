@@ -1,6 +1,6 @@
 import os, json, boto3, requests, uuid
 from datetime import datetime
-from werkzeug.utils import secure_filename
+
 from flask import Flask, session, request as flask_request
 from flask_login import LoginManager
 from config import Config
@@ -23,6 +23,7 @@ def save_upload(file, subfolder='covers'):
         ext = file.filename.rsplit('.', 1)[1].lower()
         fname = f"{uuid.uuid4().hex}.{ext}"
         path = os.path.join(UPLOAD_FOLDER, subfolder, fname)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         file.save(path)
         return f"/static/uploads/{subfolder}/{fname}"
     return None
@@ -94,8 +95,6 @@ app.register_blueprint(admin_bp, url_prefix='/admin')
 app.register_blueprint(api_bp, url_prefix='/api')
 app.register_blueprint(author_bp)
 
-import json as json_mod
-
 app.jinja_env.globals.update(get_setting=get_setting)
 
 @app.template_filter('from_json')
@@ -103,7 +102,7 @@ def from_json(value):
     if not value:
         return []
     try:
-        return json_mod.loads(value)
+        return json.loads(value)
     except:
         return []
 
@@ -112,7 +111,7 @@ def page_count(value):
     if not value:
         return 0
     try:
-        return len(json_mod.loads(value))
+        return len(json.loads(value))
     except:
         return 0
 
