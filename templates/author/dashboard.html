@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Author Panel{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <a href="{{ url_for('author.dashboard') }}" class="active">My Comics</a>
+    <a href="{{ url_for('author.create_comic') }}">Create Comic</a>
+  </div>
+  <div class="admin-content">
+    <h2 style="margin-bottom:24px">My Comics</h2>
+    <a href="{{ url_for('author.create_comic') }}" class="btn btn-primary" style="margin-bottom:20px">+ Create New Comic</a>
+    <div class="comic-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))">
+      {% for comic in comics %}
+      <div class="comic-card" style="position:relative">
+        <img src="{{ comic.cover }}" class="comic-card-cover" alt="" onerror="this.src='https://via.placeholder.com/200x280?text=No+Cover'">
+        <div class="comic-card-body">
+          <div class="comic-card-title">{{ comic.title_en[:30] }}</div>
+          <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">
+            <a href="{{ url_for('author.edit_comic', id=comic.id) }}" class="btn btn-ghost" style="padding:4px 8px;font-size:11px">Edit</a>
+            <a href="{{ url_for('author.chapters', comic_id=comic.id) }}" class="btn btn-ghost" style="padding:4px 8px;font-size:11px">Chapters</a>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <p style="grid-column:1/-1;color:var(--text-secondary);padding:40px;text-align:center">You haven't created any comics yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

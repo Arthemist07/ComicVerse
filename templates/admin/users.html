@@ -22,6 +22,8 @@
           <th>{{ _('followers') }}</th>
           <th>{{ _('favorites') }}</th>
           <th>Admin</th>
+          <th>Author</th>
+          <th>{{ _('actions') }}</th>
           <th>{{ _('joined') }}</th>
         </tr>
       </thead>
@@ -34,6 +36,16 @@
           <td>{{ user.followers_count() }}</td>
           <td>{{ user.favorites.count() }}</td>
           <td>{{ '✅' if user.is_admin else '❌' }}</td>
+          <td>{{ '✅' if user.is_author else '❌' }}</td>
+          <td>
+            {% if not user.is_admin %}
+            <form method="POST" action="{{ url_for('admin.toggle_author', user_id=user.id) }}" style="display:inline">
+              <button type="submit" class="btn btn-ghost" style="padding:4px 8px;font-size:11px">
+                {{ 'Revoke Author' if user.is_author else 'Make Author' }}
+              </button>
+            </form>
+            {% endif %}
+          </td>
           <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '' }}</td>
         </tr>
         {% endfor %}

@@ -7,6 +7,8 @@ main_bp = Blueprint('main', __name__)
 
 @main_bp.route('/')
 def index():
+    if not current_user.is_authenticated:
+        return render_template('splash.html')
     page = request.args.get('page', 1, type=int)
     genre_filter = request.args.get('genre', '')
     sort = request.args.get('sort', 'latest')

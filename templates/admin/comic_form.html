@@ -10,10 +10,11 @@
     <a href="{{ url_for('admin.settings') }}">{{ _('settings') }}</a>
     <a href="{{ url_for('admin.manage_changelog') }}">{{ _('changelog') }}</a>
     <a href="{{ url_for('admin.import_comic') }}">{{ _('import_comic') }}</a>
+    <a href="{{ url_for('admin.upload') }}">Upload Images</a>
   </div>
   <div class="admin-content">
     <h2 style="margin-bottom:24px">{{ _('edit_comic') if comic else _('create_comic') }}</h2>
-    <form method="POST" style="max-width:700px">
+    <form method="POST" enctype="multipart/form-data" style="max-width:700px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div class="form-group">
           <label>Title (EN)</label>
@@ -27,11 +28,23 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div class="form-group">
           <label>Description (EN)</label>
-          <textarea name="description_en" class="form-textarea">{{ comic.description_en if comic else '' }}</textarea>
+          <div style="margin-bottom:4px;display:flex;gap:4px;flex-wrap:wrap">
+            <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:12px" onclick="wrapText('description_en','**','**')">B</button>
+            <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:12px" onclick="wrapText('description_en','*','*')">I</button>
+            <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:12px" onclick="wrapText('description_en','[','](url)')">Link</button>
+            <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:12px" onclick="insertText('description_en','\n\n---\n\n')">HR</button>
+          </div>
+          <textarea name="description_en" class="form-textarea" id="description_en" rows="8">{{ comic.description_en if comic else '' }}</textarea>
         </div>
         <div class="form-group">
           <label>Description (ID)</label>
-          <textarea name="description_id" class="form-textarea">{{ comic.description_id if comic else '' }}</textarea>
+          <div style="margin-bottom:4px;display:flex;gap:4px;flex-wrap:wrap">
+            <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:12px" onclick="wrapText('description_id','**','**')">B</button>
+            <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:12px" onclick="wrapText('description_id','*','*')">I</button>
+            <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:12px" onclick="wrapText('description_id','[','](url)')">Link</button>
+            <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:12px" onclick="insertText('description_id','\n\n---\n\n')">HR</button>
+          </div>
+          <textarea name="description_id" class="form-textarea" id="description_id" rows="8">{{ comic.description_id if comic else '' }}</textarea>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
@@ -67,12 +80,17 @@
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div class="form-group">
-          <label>Cover URL</label>
+          <label>Cover URL <span style="color:var(--text-secondary);font-size:12px">(or upload)</span></label>
           <input type="text" name="cover" class="form-input" value="{{ comic.cover if comic else '' }}" placeholder="https://">
+          <input type="file" name="cover_file" class="form-input" accept="image/*" style="margin-top:6px;padding:8px">
+          {% if comic and comic.cover and comic.cover != 'default_cover.png' %}
+          <div style="margin-top:4px"><img src="{{ comic.cover }}" style="width:60px;height:80px;object-fit:cover;border-radius:4px"></div>
+          {% endif %}
         </div>
         <div class="form-group">
-          <label>Banner URL</label>
+          <label>Banner URL <span style="color:var(--text-secondary);font-size:12px">(or upload)</span></label>
           <input type="text" name="banner" class="form-input" value="{{ comic.banner if comic else '' }}" placeholder="https://">
+          <input type="file" name="banner_file" class="form-input" accept="image/*" style="margin-top:6px;padding:8px">
         </div>
       </div>
       <div class="form-group">
@@ -91,4 +109,22 @@
     </form>
   </div>
 </div>
+<script>
+function wrapText(id, before, after) {
+  const ta = document.getElementById(id);
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const text = ta.value;
+  const selected = text.substring(start, end);
+  ta.value = text.substring(0, start) + before + selected + after + text.substring(end);
+  ta.focus();
+  ta.selectionStart = start + before.length;
+  ta.selectionEnd = start + before.length + selected.length;
+}
+function insertText(id, text) {
+  const ta = document.getElementById(id);
+  const start = ta.selectionStart;
+  ta.value = ta.value.substring(0, start) + text + ta.value.substring(ta.selectionEnd);
+  ta.focus();
+}
+</script>
 {% endblock %}

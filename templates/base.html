@@ -17,6 +17,8 @@
         <a href="{{ url_for('main.my_profile') }}">{{ _('profile') }}</a>
         {% if current_user.is_admin %}
           <a href="{{ url_for('admin.dashboard') }}">{{ _('admin_panel') }}</a>
+        {% elif current_user.is_author %}
+          <a href="{{ url_for('author.dashboard') }}">Author Panel</a>
         {% endif %}
       {% endif %}
       <a href="{{ url_for('main.changelog') }}">{{ _('changelog') }}</a>

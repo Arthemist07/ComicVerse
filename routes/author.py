@@ -1,0 +1,166 @@
+import json
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_login import login_required, current_user
+from functools import wraps
+from models import db, Comic, Chapter, Genre, ComicGenre
+from app import save_upload, allowed_file
+
+author_bp = Blueprint('author', __name__, url_prefix='/author')
+
+def author_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not current_user.is_authenticated or not (current_user.is_admin or current_user.is_author):
+            flash('Author access required', 'error')
+            return redirect(url_for('auth.login'))
+        return f(*args, **kwargs)
+    return decorated
+
+@author_bp.route('/')
+@login_required
+@author_required
+def dashboard():
+    if current_user.is_admin:
+        comics = Comic.query.order_by(Comic.updated_at.desc()).all()
+    else:
+        comics = Comic.query.filter_by(author_id=current_user.id).order_by(Comic.updated_at.desc()).all()
+    return render_template('author/dashboard.html', comics=comics)
+
+@author_bp.route('/comic/create', methods=['GET', 'POST'])
+@login_required
+@author_required
+def create_comic():
+    genres = Genre.query.all()
+    if request.method == 'POST':
+        cover_url = request.form.get('cover', '')
+        cover_file = request.files.get('cover_file')
+        if cover_file and allowed_file(cover_file.filename):
+            cover_url = save_upload(cover_file, 'covers') or cover_url
+
+        comic = Comic(
+            title_en=request.form['title_en'],
+            title_id=request.form['title_id'],
+            description_en=request.form.get('description_en', ''),
+            description_id=request.form.get('description_id', ''),
+            type=request.form['type'],
+            status=request.form['status'],
+            author=request.form.get('author', current_user.username),
+            artist=request.form.get('artist', ''),
+            cover=cover_url or 'default_cover.png',
+            author_id=current_user.id
+        )
+        db.session.add(comic)
+        db.session.commit()
+        for gid in request.form.getlist('genres'):
+            db.session.add(ComicGenre(comic_id=comic.id, genre_id=int(gid)))
+        db.session.commit()
+        flash('Comic created!', 'success')
+        return redirect(url_for('author.dashboard'))
+    return render_template('author/comic_form.html', genres=genres, comic=None)
+
+@author_bp.route('/comic/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+@author_required
+def edit_comic(id):
+    comic = Comic.query.get_or_404(id)
+    if comic.author_id != current_user.id and not current_user.is_admin:
+        flash('Not your comic', 'error')
+        return redirect(url_for('author.dashboard'))
+    genres = Genre.query.all()
+    if request.method == 'POST':
+        comic.title_en = request.form['title_en']
+        comic.title_id = request.form['title_id']
+        comic.description_en = request.form.get('description_en', '')
+        comic.description_id = request.form.get('description_id', '')
+        comic.type = request.form['type']
+        comic.status = request.form['status']
+
+        cover_url = request.form.get('cover', comic.cover)
+        cover_file = request.files.get('cover_file')
+        if cover_file and allowed_file(cover_file.filename):
+            cover_url = save_upload(cover_file, 'covers') or cover_url
+        comic.cover = cover_url
+
+        ComicGenre.query.filter_by(comic_id=comic.id).delete()
+        for gid in request.form.getlist('genres'):
+            db.session.add(ComicGenre(comic_id=comic.id, genre_id=int(gid)))
+        db.session.commit()
+        flash('Comic updated!', 'success')
+        return redirect(url_for('author.dashboard'))
+    return render_template('author/comic_form.html', genres=genres, comic=comic)
+
+@author_bp.route('/comic/delete/<int:id>', methods=['POST'])
+@login_required
+@author_required
+def delete_comic(id):
+    comic = Comic.query.get_or_404(id)
+    if comic.author_id != current_user.id and not current_user.is_admin:
+        flash('Not your comic', 'error')
+        return redirect(url_for('author.dashboard'))
+    Chapter.query.filter_by(comic_id=id).delete()
+    ComicGenre.query.filter_by(comic_id=id).delete()
+    db.session.delete(comic)
+    db.session.commit()
+    flash('Comic deleted', 'success')
+    return redirect(url_for('author.dashboard'))
+
+@author_bp.route('/chapters/<int:comic_id>')
+@login_required
+@author_required
+def chapters(comic_id):
+    comic = Comic.query.get_or_404(comic_id)
+    if comic.author_id != current_user.id and not current_user.is_admin:
+        flash('Not your comic', 'error')
+        return redirect(url_for('author.dashboard'))
+    chs = Chapter.query.filter_by(comic_id=comic_id).order_by(Chapter.number.desc()).all()
+    return render_template('author/chapters.html', comic=comic, chapters=chs)
+
+@author_bp.route('/chapter/create/<int:comic_id>', methods=['GET', 'POST'])
+@login_required
+@author_required
+def create_chapter(comic_id):
+    comic = Comic.query.get_or_404(comic_id)
+    if comic.author_id != current_user.id and not current_user.is_admin:
+        flash('Not your comic', 'error')
+        return redirect(url_for('author.dashboard'))
+    if request.method == 'POST':
+        pages = []
+        page_files = request.files.getlist('page_files')
+        for pf in page_files:
+            if pf and allowed_file(pf.filename):
+                url = save_upload(pf, 'pages')
+                if url:
+                    pages.append(url)
+        pages_input = request.form.get('pages', '[]')
+        try:
+            extra_pages = json.loads(pages_input)
+            pages.extend(extra_pages)
+        except:
+            pass
+        chapter = Chapter(
+            comic_id=comic_id,
+            number=float(request.form['number']),
+            title_en=request.form['title_en'],
+            title_id=request.form['title_id'],
+            pages=json.dumps(pages) if pages else pages_input
+        )
+        db.session.add(chapter)
+        db.session.commit()
+        flash('Chapter created!', 'success')
+        return redirect(url_for('author.chapters', comic_id=comic_id))
+    return render_template('author/chapter_form.html', comic=comic, chapter=None)
+
+@author_bp.route('/chapter/delete/<int:id>', methods=['POST'])
+@login_required
+@author_required
+def delete_chapter(id):
+    chapter = Chapter.query.get_or_404(id)
+    comic = chapter.comic
+    if comic.author_id != current_user.id and not current_user.is_admin:
+        flash('Not your comic', 'error')
+        return redirect(url_for('author.dashboard'))
+    cid = chapter.comic_id
+    db.session.delete(chapter)
+    db.session.commit()
+    flash('Chapter deleted', 'success')
+    return redirect(url_for('author.chapters', comic_id=cid))

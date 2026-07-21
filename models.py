@@ -21,6 +21,7 @@ class User(UserMixin, db.Model):
     language = db.Column(db.String(5), default='en')
     custom_bg = db.Column(db.String(500), default='')
     is_admin = db.Column(db.Boolean, default=False)
+    is_author = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     history = db.relationship('ReadHistory', backref='user', lazy='dynamic')
@@ -67,6 +68,7 @@ class Comic(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title_en = db.Column(db.String(200), nullable=False)
     title_id = db.Column(db.String(200), nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     description_en = db.Column(db.Text, default='')
     description_id = db.Column(db.Text, default='')
     cover = db.Column(db.String(500), default='default_cover.png')

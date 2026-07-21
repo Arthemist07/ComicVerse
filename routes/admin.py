@@ -1,10 +1,11 @@
-import json, os, re, requests
+import json, os, re, requests, uuid
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_required, current_user
 from functools import wraps
 from bs4 import BeautifulSoup
 from models import db, Comic, Chapter, Genre, ComicGenre, User, Changelog, Notification, SiteSettings
 from werkzeug.utils import secure_filename
+from app import save_upload, allowed_file
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -42,6 +43,16 @@ def comics():
 def create_comic():
     genres = Genre.query.all()
     if request.method == 'POST':
+        cover_url = request.form.get('cover', '')
+        cover_file = request.files.get('cover_file')
+        if cover_file and allowed_file(cover_file.filename):
+            cover_url = save_upload(cover_file, 'covers') or cover_url
+
+        banner_url = request.form.get('banner', '')
+        banner_file = request.files.get('banner_file')
+        if banner_file and allowed_file(banner_file.filename):
+            banner_url = save_upload(banner_file, 'covers') or banner_url
+
         comic = Comic(
             title_en=request.form['title_en'],
             title_id=request.form['title_id'],
@@ -51,8 +62,9 @@ def create_comic():
             status=request.form['status'],
             author=request.form['author'],
             artist=request.form['artist'],
-            cover=request.form.get('cover', 'default_cover.png'),
-            banner=request.form.get('banner', '')
+            cover=cover_url or 'default_cover.png',
+            banner=banner_url or '',
+            author_id=current_user.id if not current_user.is_admin else None
         )
         db.session.add(comic)
         db.session.commit()
@@ -79,8 +91,18 @@ def edit_comic(id):
         comic.status = request.form['status']
         comic.author = request.form['author']
         comic.artist = request.form['artist']
-        comic.cover = request.form.get('cover', comic.cover)
-        comic.banner = request.form.get('banner', comic.banner)
+
+        cover_url = request.form.get('cover', comic.cover)
+        cover_file = request.files.get('cover_file')
+        if cover_file and allowed_file(cover_file.filename):
+            cover_url = save_upload(cover_file, 'covers') or cover_url
+        comic.cover = cover_url
+
+        banner_url = request.form.get('banner', comic.banner)
+        banner_file = request.files.get('banner_file')
+        if banner_file and allowed_file(banner_file.filename):
+            banner_url = save_upload(banner_file, 'covers') or banner_url
+        comic.banner = banner_url
 
         ComicGenre.query.filter_by(comic_id=comic.id).delete()
         for gid in request.form.getlist('genres'):
@@ -236,34 +258,82 @@ def delete_changelog(id):
 @admin_required
 def import_comic():
     if request.method == 'POST':
-        url = request.form.get('url', '')
-        source = request.form.get('source', '')
+        url = request.form.get('url', '').strip()
+        source = request.form.get('source', '').strip().lower()
         if not url:
             flash('URL is required', 'error')
             return render_template('admin/import.html')
         try:
-            headers = {'User-Agent': 'Mozilla/5.0'}
-            resp = requests.get(url, headers=headers, timeout=15)
-            soup = BeautifulSoup(resp.text, 'lxml')
-
-            title_en = soup.title.string if soup.title else 'Imported Comic'
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+            title_en = 'Imported Comic'
             title_id = title_en
-            desc = ''
-            meta_desc = soup.find('meta', attrs={'name': 'description'})
-            if meta_desc:
-                desc = meta_desc.get('content', '')
-
+            desc_en = ''
+            desc_id = ''
             cover = ''
-            og_img = soup.find('meta', property='og:image')
-            if og_img:
-                cover = og_img.get('content', '')
+
+            # MangaDex API import
+            if 'mangadex' in url or source == 'mangadex':
+                import re as _re
+                md_match = _re.search(r'(?:mangadex\.org/(?:title/)?)([a-f0-9\-]{36})', url)
+                if md_match:
+                    md_id = md_match.group(1)
+                elif _re.match(r'^[a-f0-9\-]{36}$', url):
+                    md_id = url
+                else:
+                    raise Exception('Could not extract MangaDex ID from URL')
+
+                # Fetch manga details from MangaDex API
+                md_resp = requests.get(f'https://api.mangadex.org/manga/{md_id}', headers=headers, timeout=15)
+                if md_resp.status_code != 200:
+                    raise Exception(f'MangaDex API returned {md_resp.status_code}')
+                md_data = md_resp.json().get('data', {})
+                attrs = md_data.get('attributes', {})
+
+                title_en = attrs.get('title', {}).get('en', '')
+                alt_titles = attrs.get('altTitles', [])
+                for at in alt_titles:
+                    if 'id' in at:
+                        title_id = at['id']
+                        break
+                if not title_id:
+                    title_id = title_en
+                desc_en = attrs.get('description', {}).get('en', '')
+                desc_id = attrs.get('description', {}).get('id', '')
+
+                # Get cover from MangaDex
+                cover_resp = requests.get(f'https://api.mangadex.org/cover?manga[]={md_id}', headers=headers, timeout=10)
+                if cover_resp.status_code == 200:
+                    cover_data = cover_resp.json().get('data', [])
+                    if cover_data:
+                        cv_attrs = cover_data[0].get('attributes', {})
+                        cv_file = cv_attrs.get('fileName', '')
+                        if cv_file:
+                            cover = f'https://uploads.mangadex.org/covers/{md_id}/{cv_file}'
+
+                # Try to get chapters list
+                try:
+                    ch_resp = requests.get(f'https://api.mangadex.org/manga/{md_id}/feed?limit=5&translatedLanguage[]=en&order[chapter]=desc', headers=headers, timeout=10)
+                except:
+                    pass
+            else:
+                # Generic import via HTML scraping
+                resp = requests.get(url, headers=headers, timeout=15)
+                soup = BeautifulSoup(resp.text, 'lxml')
+                title_en = soup.title.string if soup.title else 'Imported Comic'
+                title_id = title_en
+                meta_desc = soup.find('meta', attrs={'name': 'description'})
+                if meta_desc:
+                    desc_en = meta_desc.get('content', '')
+                og_img = soup.find('meta', property='og:image')
+                if og_img:
+                    cover = og_img.get('content', '')
 
             comic = Comic(
-                title_en=title_en,
-                title_id=title_id,
-                description_en=desc,
-                description_id=desc,
-                cover=cover
+                title_en=title_en or 'Imported Comic',
+                title_id=title_id or title_en or 'Imported Comic',
+                description_en=desc_en,
+                description_id=desc_id or desc_en,
+                cover=cover or '/static/uploads/covers/default_cover.png'
             )
             db.session.add(comic)
             db.session.commit()
@@ -272,6 +342,46 @@ def import_comic():
         except Exception as e:
             flash(f'Import failed: {str(e)}', 'error')
     return render_template('admin/import.html')
+
+@admin_bp.route('/upload')
+@login_required
+@admin_required
+def upload():
+    import glob
+    covers = glob.glob(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads', 'covers', '*'))
+    pages = glob.glob(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads', 'pages', '*'))
+    all_imgs = []
+    for f in sorted(covers + pages, key=os.path.getmtime, reverse=True)[:24]:
+        rel = f.split('static\\uploads\\')[-1].replace('\\', '/')
+        all_imgs.append(f'/static/uploads/{rel}')
+    return render_template('admin/upload.html', recent_images=all_imgs)
+
+@admin_bp.route('/upload-image', methods=['POST'])
+@login_required
+@admin_required
+def upload_image():
+    from app import save_upload
+    img_type = request.form.get('type', 'covers')
+    if img_type not in ['covers', 'pages']:
+        img_type = 'covers'
+    file = request.files.get('file')
+    if file:
+        url = save_upload(file, img_type)
+        if url:
+            flash(f'Uploaded! URL: {url}', 'success')
+        else:
+            flash('Invalid file type', 'error')
+    return redirect(url_for('admin.upload'))
+
+@admin_bp.route('/toggle-author/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def toggle_author(user_id):
+    user = User.query.get_or_404(user_id)
+    user.is_author = not user.is_author
+    db.session.commit()
+    flash(f'User {user.username} author status: {user.is_author}', 'success')
+    return redirect(url_for('admin.manage_users'))
 
 @admin_bp.route('/send-notification', methods=['POST'])
 @login_required

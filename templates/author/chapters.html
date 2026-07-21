@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Chapters{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <a href="{{ url_for('author.dashboard') }}">My Comics</a>
+    <a href="{{ url_for('author.create_comic') }}">Create Comic</a>
+  </div>
+  <div class="admin-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <div>
+        <h2>Chapters: {{ comic.title_en }}</h2>
+        <a href="{{ url_for('author.edit_comic', id=comic.id) }}" style="color:var(--accent);font-size:14px">← Edit Comic</a>
+      </div>
+      <a href="{{ url_for('author.create_chapter', comic_id=comic.id) }}" class="btn btn-primary">+ Add Chapter</a>
+    </div>
+    <table class="table">
+      <thead><tr><th>Ch.</th><th>Title</th><th>Pages</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for ch in chapters %}
+        <tr>
+          <td>{{ ch.number }}</td>
+          <td>{{ ch.title_en or ch.title_id }}</td>
+          <td>{{ ch.pages|page_count }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('author.delete_chapter', id=ch.id) }}" style="display:inline" onsubmit="return confirm('Delete chapter?')">
+              <button type="submit" class="btn btn-danger" style="padding:4px 12px;font-size:12px">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

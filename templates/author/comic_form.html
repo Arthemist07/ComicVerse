@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Create Comic{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <a href="{{ url_for('author.dashboard') }}">My Comics</a>
+    <a href="{{ url_for('author.create_comic') }}" class="active">Create Comic</a>
+  </div>
+  <div class="admin-content">
+    <h2 style="margin-bottom:24px">{% if comic %}Edit{% else %}Create{% endif %} Comic</h2>
+    <form method="POST" enctype="multipart/form-data" style="max-width:700px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group"><label>Title (EN)</label><input type="text" name="title_en" class="form-input" value="{{ comic.title_en if comic else '' }}" required></div>
+        <div class="form-group"><label>Title (ID)</label><input type="text" name="title_id" class="form-input" value="{{ comic.title_id if comic else '' }}" required></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label>Description (EN)</label>
+          <div style="margin-bottom:4px;display:flex;gap:4px;flex-wrap:wrap">
+            <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:12px" onclick="wrapText('desc_en','**','**')">B</button>
+            <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:12px" onclick="wrapText('desc_en','*','*')">I</button>
+            <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:12px" onclick="wrapText('desc_en','[','](url)')">Link</button>
+          </div>
+          <textarea name="description_en" class="form-textarea" id="desc_en" rows="6">{{ comic.description_en if comic else '' }}</textarea>
+        </div>
+        <div class="form-group">
+          <label>Description (ID)</label>
+          <div style="margin-bottom:4px;display:flex;gap:4px;flex-wrap:wrap">
+            <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:12px" onclick="wrapText('desc_id','**','**')">B</button>
+            <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:12px" onclick="wrapText('desc_id','*','*')">I</button>
+            <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:12px" onclick="wrapText('desc_id','[','](url)')">Link</button>
+          </div>
+          <textarea name="description_id" class="form-textarea" id="desc_id" rows="6">{{ comic.description_id if comic else '' }}</textarea>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label>Type</label>
+          <select name="type" class="form-select">
+            <option value="manga">Manga</option>
+            <option value="manhwa">Manhwa</option>
+            <option value="manhua">Manhua</option>
+            <option value="novel">Novel</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status" class="form-select">
+            <option value="ongoing">Ongoing</option>
+            <option value="completed">Completed</option>
+            <option value="hiatus">Hiatus</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Rating</label>
+          <input type="number" step="0.1" name="rating" class="form-input" value="{{ comic.rating if comic else '0' }}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Cover Image <span style="color:var(--text-secondary);font-size:12px">(URL or upload)</span></label>
+        <input type="text" name="cover" class="form-input" value="{{ comic.cover if comic else '' }}" placeholder="Paste URL or upload below">
+        <input type="file" name="cover_file" class="form-input" accept="image/*" style="margin-top:6px;padding:8px">
+        {% if comic and comic.cover and comic.cover != 'default_cover.png' %}
+        <div style="margin-top:4px"><img src="{{ comic.cover }}" style="width:60px;height:80px;object-fit:cover;border-radius:4px"></div>
+        {% endif %}
+      </div>
+      <div class="form-group">
+        <label>Genres</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          {% for genre in genres %}
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer">
+            <input type="checkbox" name="genres" value="{{ genre.id }}"
+              {% if comic and genre in [cg.genre for cg in comic.genres] %}checked{% endif %}>
+            {{ genre.name_en }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="padding:12px 32px">Save Comic</button>
+      <a href="{{ url_for('author.dashboard') }}" class="btn btn-ghost" style="padding:12px 32px">Cancel</a>
+    </form>
+  </div>
+</div>
+<script>
+function wrapText(id, before, after) {
+  const ta = document.getElementById(id);
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const text = ta.value;
+  const selected = text.substring(start, end);
+  ta.value = text.substring(0, start) + before + selected + after + text.substring(end);
+  ta.focus();
+  ta.selectionStart = start + before.length;
+  ta.selectionEnd = start + before.length + selected.length;
+}
+function insertText(id, text) {
+  const ta = document.getElementById(id);
+  const start = ta.selectionStart;
+  ta.value = ta.value.substring(0, start) + text + ta.value.substring(ta.selectionEnd);
+  ta.focus();
+}
+</script>
+{% endblock %}

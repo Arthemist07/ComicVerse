@@ -1,4 +1,6 @@
-import os, json, boto3, requests
+import os, json, boto3, requests, uuid
+from datetime import datetime
+from werkzeug.utils import secure_filename
 from flask import Flask, session, request as flask_request
 from flask_login import LoginManager
 from config import Config
@@ -8,6 +10,22 @@ from routes.main import main_bp
 from routes.comic import comic_bp
 from routes.admin import admin_bp
 from routes.api import api_bp
+from routes.author import author_bp
+
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'avif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def save_upload(file, subfolder='covers'):
+    if file and allowed_file(file.filename):
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        fname = f"{uuid.uuid4().hex}.{ext}"
+        path = os.path.join(UPLOAD_FOLDER, subfolder, fname)
+        file.save(path)
+        return f"/static/uploads/{subfolder}/{fname}"
+    return None
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -74,6 +92,7 @@ app.register_blueprint(main_bp)
 app.register_blueprint(comic_bp)
 app.register_blueprint(admin_bp, url_prefix='/admin')
 app.register_blueprint(api_bp, url_prefix='/api')
+app.register_blueprint(author_bp)
 
 import json as json_mod
 

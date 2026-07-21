@@ -17,25 +17,37 @@
       Import comic metadata from an external URL. This will scrape the title, description, and cover image.
       You can then edit the comic and add chapters manually.
     </p>
-    <form method="POST" style="max-width:500px;background:var(--bg-card);padding:24px;border-radius:var(--radius);border:1px solid var(--border)">
-      <div class="form-group">
-        <label>Source URL</label>
-        <input type="url" name="url" class="form-input" placeholder="https://example.com/comic-title" required>
-      </div>
-      <div class="form-group">
-        <label>Source Name (optional)</label>
-        <input type="text" name="source" class="form-input" placeholder="e.g. MangaDex, Bato.to">
-      </div>
-      <button type="submit" class="btn btn-primary">{{ _('import') }}</button>
-    </form>
-    <div style="margin-top:24px;background:var(--bg-card);border-radius:var(--radius);padding:24px;border:1px solid var(--border);max-width:500px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px">
+      <form method="POST" style="background:var(--bg-card);padding:24px;border-radius:var(--radius);border:1px solid var(--border)">
+        <h3 style="margin-bottom:16px">Import from MangaDex</h3>
+        <div class="form-group">
+          <label>MangaDex URL or ID</label>
+          <input type="text" name="url" class="form-input" placeholder="https://mangadex.org/title/... or just the UUID" required>
+        </div>
+        <input type="hidden" name="source" value="mangadex">
+        <button type="submit" class="btn btn-primary">Import from MangaDex</button>
+      </form>
+      <form method="POST" style="background:var(--bg-card);padding:24px;border-radius:var(--radius);border:1px solid var(--border)">
+        <h3 style="margin-bottom:16px">Import from Other Site</h3>
+        <div class="form-group">
+          <label>Source URL</label>
+          <input type="url" name="url" class="form-input" placeholder="https://example.com/comic-title" required>
+        </div>
+        <div class="form-group">
+          <label>Source Name</label>
+          <input type="text" name="source" class="form-input" placeholder="e.g. Bato.to, Anilist">
+        </div>
+        <button type="submit" class="btn btn-primary">Import</button>
+      </form>
+    </div>
+    <div style="background:var(--bg-card);border-radius:var(--radius);padding:24px;border:1px solid var(--border);max-width:700px">
       <h3 style="margin-bottom:8px;font-size:14px">How it works</h3>
       <ol style="color:var(--text-secondary);font-size:13px;line-height:1.8;padding-left:20px">
-        <li>Enter the URL of the comic page you want to import</li>
-        <li>The system fetches the page and extracts title, description, and cover image</li>
+        <li><strong>MangaDex:</strong> Enter a MangaDex title URL or UUID → fetches title, description (EN+ID), and cover via MangaDex API</li>
+        <li><strong>Other sites:</strong> Enter any comic page URL → scrapes title, description, and cover image</li>
         <li>A new comic is created with the scraped data</li>
-        <li>You can then edit the comic to add genres, fix details, and add chapters</li>
-        <li>Chapters must be added manually with image URLs</li>
+        <li>You can then edit the comic to add genres, fix details, and upload chapters</li>
+        <li>Chapters can be created by uploading image files directly</li>
       </ol>
     </div>
   </div>
