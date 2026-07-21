@@ -3,8 +3,6 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from functools import wraps
 from models import db, Comic, Chapter, Genre, ComicGenre
-from app import save_upload, allowed_file
-
 author_bp = Blueprint('author', __name__, url_prefix='/author')
 
 def author_required(f):
@@ -30,6 +28,7 @@ def dashboard():
 @login_required
 @author_required
 def create_comic():
+    from app import save_upload, allowed_file
     genres = Genre.query.all()
     if request.method == 'POST':
         cover_url = request.form.get('cover', '')
@@ -62,6 +61,7 @@ def create_comic():
 @login_required
 @author_required
 def edit_comic(id):
+    from app import save_upload, allowed_file
     comic = Comic.query.get_or_404(id)
     if comic.author_id != current_user.id and not current_user.is_admin:
         flash('Not your comic', 'error')
@@ -119,6 +119,7 @@ def chapters(comic_id):
 @login_required
 @author_required
 def create_chapter(comic_id):
+    from app import save_upload, allowed_file
     comic = Comic.query.get_or_404(comic_id)
     if comic.author_id != current_user.id and not current_user.is_admin:
         flash('Not your comic', 'error')

@@ -5,8 +5,6 @@ from functools import wraps
 from bs4 import BeautifulSoup
 from models import db, Comic, Chapter, Genre, ComicGenre, User, Changelog, Notification, SiteSettings, LevelConfig, UserRole, UserRoleAssignment
 from werkzeug.utils import secure_filename
-from app import save_upload, allowed_file
-
 admin_bp = Blueprint('admin', __name__)
 
 def admin_required(f):
@@ -41,6 +39,7 @@ def comics():
 @login_required
 @admin_required
 def create_comic():
+    from app import save_upload, allowed_file
     genres = Genre.query.all()
     if request.method == 'POST':
         cover_url = request.form.get('cover', '')
@@ -80,6 +79,7 @@ def create_comic():
 @login_required
 @admin_required
 def edit_comic(id):
+    from app import save_upload, allowed_file
     comic = Comic.query.get_or_404(id)
     genres = Genre.query.all()
     if request.method == 'POST':
