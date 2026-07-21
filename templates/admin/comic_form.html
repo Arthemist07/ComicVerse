@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ _('edit_comic') if comic else _('create_comic') }}{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <a href="{{ url_for('admin.dashboard') }}">{{ _('dashboard') }}</a>
+    <a href="{{ url_for('admin.comics') }}" class="active">{{ _('manage_comics') }}</a>
+    <a href="{{ url_for('admin.manage_genres') }}">{{ _('manage_genres') }}</a>
+    <a href="{{ url_for('admin.manage_users') }}">{{ _('manage_users') }}</a>
+    <a href="{{ url_for('admin.settings') }}">{{ _('settings') }}</a>
+    <a href="{{ url_for('admin.manage_changelog') }}">{{ _('changelog') }}</a>
+    <a href="{{ url_for('admin.import_comic') }}">{{ _('import_comic') }}</a>
+  </div>
+  <div class="admin-content">
+    <h2 style="margin-bottom:24px">{{ _('edit_comic') if comic else _('create_comic') }}</h2>
+    <form method="POST" style="max-width:700px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label>Title (EN)</label>
+          <input type="text" name="title_en" class="form-input" value="{{ comic.title_en if comic else '' }}" required>
+        </div>
+        <div class="form-group">
+          <label>Title (ID)</label>
+          <input type="text" name="title_id" class="form-input" value="{{ comic.title_id if comic else '' }}" required>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label>Description (EN)</label>
+          <textarea name="description_en" class="form-textarea">{{ comic.description_en if comic else '' }}</textarea>
+        </div>
+        <div class="form-group">
+          <label>Description (ID)</label>
+          <textarea name="description_id" class="form-textarea">{{ comic.description_id if comic else '' }}</textarea>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label>{{ _('type') }}</label>
+          <select name="type" class="form-select">
+            <option value="manga" {% if comic and comic.type == 'manga' %}selected{% endif %}>{{ _('type_manga') }}</option>
+            <option value="manhwa" {% if comic and comic.type == 'manhwa' %}selected{% endif %}>{{ _('type_manhwa') }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>{{ _('status') }}</label>
+          <select name="status" class="form-select">
+            <option value="ongoing" {% if comic and comic.status == 'ongoing' %}selected{% endif %}>{{ _('status_ongoing') }}</option>
+            <option value="completed" {% if comic and comic.status == 'completed' %}selected{% endif %}>{{ _('status_completed') }}</option>
+            <option value="hiatus" {% if comic and comic.status == 'hiatus' %}selected{% endif %}>{{ _('status_hiatus') }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Rating</label>
+          <input type="number" step="0.1" name="rating" class="form-input" value="{{ comic.rating if comic else '0' }}">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label>{{ _('author') }}</label>
+          <input type="text" name="author" class="form-input" value="{{ comic.author if comic else '' }}">
+        </div>
+        <div class="form-group">
+          <label>{{ _('artist') }}</label>
+          <input type="text" name="artist" class="form-input" value="{{ comic.artist if comic else '' }}">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label>Cover URL</label>
+          <input type="text" name="cover" class="form-input" value="{{ comic.cover if comic else '' }}" placeholder="https://">
+        </div>
+        <div class="form-group">
+          <label>Banner URL</label>
+          <input type="text" name="banner" class="form-input" value="{{ comic.banner if comic else '' }}" placeholder="https://">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>{{ _('genres') }}</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          {% for genre in genres %}
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer">
+            <input type="checkbox" name="genres" value="{{ genre.id }}"
+              {% if comic and genre in [cg.genre for cg in comic.genres] %}checked{% endif %}>
+            {{ genre.name_en }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="padding:12px 32px">{{ _('save') }}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

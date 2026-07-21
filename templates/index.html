@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}{{ _('home') }}{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-text">
+      <h1>{{ _('welcome_title') or 'Discover Amazing Comics' }}</h1>
+      <p>{{ _('hero_desc') or 'Read the latest manga, manhwa, and novels. Track your reading, create collections, and connect with fellow readers.' }}</p>
+      <a href="{{ url_for('comic.genres') }}" class="btn btn-primary" style="padding:12px 28px;font-size:16px">{{ _('browse') }} {{ _('genres') }}</a>
+    </div>
+    <div class="hero-carousel">
+      {% for comic in popular %}
+      <a href="{{ url_for('comic.comic_detail', comic_id=comic.id) }}" class="hero-card">
+        <img src="{{ comic.cover }}" alt="{{ comic.title_en }}" loading="lazy">
+        <div class="hero-card-overlay">
+          <h3>{{ comic.title_en }}</h3>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<div class="container">
+  <div class="section-header">
+    <h2 class="section-title">{{ _('trending') }}</h2>
+    <a href="{{ url_for('comic.genres') }}" class="section-link">{{ _('view_all') }}</a>
+  </div>
+
+  <div class="genre-selector">
+    <button class="genre-pill {% if not request.args.get('genre') %}active{% endif %}" onclick="filterGenre('')">{{ _('all') }}</button>
+    {% for genre in genres %}
+    <button class="genre-pill {% if request.args.get('genre')|string == genre.id|string %}active{% endif %}" onclick="filterGenre('{{ genre.id }}')">
+      {{ genre.name_en if session.get('language') == 'en' else genre.name_id }}
+    </button>
+    {% endfor %}
+  </div>
+
+  <div class="sort-bar">
+    <button class="sort-btn {% if request.args.get('sort') in [None, 'latest'] %}active{% endif %}" onclick="sortComics('latest')">{{ _('latest') }}</button>
+    <button class="sort-btn {% if request.args.get('sort') == 'popular' %}active{% endif %}" onclick="sortComics('popular')">{{ _('popular') }}</button>
+    <button class="sort-btn {% if request.args.get('sort') == 'rating' %}active{% endif %}" onclick="sortComics('rating')">{{ _('rated_first') }}</button>
+  </div>
+
+  <div class="comic-grid">
+    {% for comic in comics.items %}
+    <a href="{{ url_for('comic.comic_detail', comic_id=comic.id) }}" class="comic-card" style="text-decoration:none;color:inherit">
+      <img src="{{ comic.cover }}" class="comic-card-cover" alt="{{ comic.title_en }}" loading="lazy" onerror="this.src='https://via.placeholder.com/200x280?text=No+Cover'">
+      <div class="comic-card-body">
+        <div class="comic-card-title">{{ comic.title_en if session.get('language') == 'en' else comic.title_id }}</div>
+        <div class="comic-card-meta">
+          <span>{{ _('type_' + comic.type) if comic.type in ['manga', 'manhwa'] else comic.type }}</span>
+          <span>⭐ {{ comic.rating }}</span>
+        </div>
+      </div>
+    </a>
+    {% else %}
+    <p style="grid-column:1/-1;text-align:center;color:var(--text-secondary);padding:40px">{{ _('no_comics_found') }}</p>
+    {% endfor %}
+  </div>
+
+  {% if comics.pages > 1 %}
+  <div style="display:flex;justify-content:center;gap:8px;margin-top:32px">
+    {% for page in range(1, comics.pages + 1) %}
+    <a href="?page={{ page }}{% if request.args.get('genre') %}&genre={{ request.args.get('genre') }}{% endif %}{% if request.args.get('sort') %}&sort={{ request.args.get('sort') }}{% endif %}"
+       class="btn {% if page == comics.page %}btn-primary{% else %}btn-ghost{% endif %}"
+       style="min-width:40px;justify-content:center">
+      {{ page }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div style="margin-top:48px">
+    <div class="section-header">
+      <h2 class="section-title">{{ _('latest_updates') }}</h2>
+    </div>
+    <div class="comic-grid">
+      {% for comic in latest_updates %}
+      <a href="{{ url_for('comic.comic_detail', comic_id=comic.id) }}" class="comic-card" style="text-decoration:none;color:inherit">
+        <img src="{{ comic.cover }}" class="comic-card-cover" alt="" loading="lazy" onerror="this.src='https://via.placeholder.com/200x280?text=No+Cover'">
+        <div class="comic-card-body">
+          <div class="comic-card-title">{{ comic.title_en if session.get('language') == 'en' else comic.title_id }}</div>
+          <div class="comic-card-meta">
+            {% if comic.chapters.first() %}
+            <span>{{ _('ch') }} {{ comic.chapters.first().number }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<footer style="text-align:center;padding:32px;color:var(--text-secondary);font-size:14px;border-top:1px solid var(--border);margin-top:48px">
+  {{ get_setting('footer_text') or '&copy; ComicVerse' | safe }}
+</footer>
+{% endblock %}

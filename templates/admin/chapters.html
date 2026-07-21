@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ _('chapters') }} - {{ comic.title_en }}{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <a href="{{ url_for('admin.dashboard') }}">{{ _('dashboard') }}</a>
+    <a href="{{ url_for('admin.comics') }}" class="active">{{ _('manage_comics') }}</a>
+    <a href="{{ url_for('admin.manage_genres') }}">{{ _('manage_genres') }}</a>
+    <a href="{{ url_for('admin.manage_users') }}">{{ _('manage_users') }}</a>
+    <a href="{{ url_for('admin.settings') }}">{{ _('settings') }}</a>
+    <a href="{{ url_for('admin.manage_changelog') }}">{{ _('changelog') }}</a>
+  </div>
+  <div class="admin-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <div>
+        <h2>{{ _('chapters') }} - {{ comic.title_en }}</h2>
+        <a href="{{ url_for('admin.edit_comic', id=comic.id) }}" style="color:var(--accent);font-size:14px">← {{ _('edit_comic') }}</a>
+      </div>
+      <a href="{{ url_for('admin.create_chapter', comic_id=comic.id) }}" class="btn btn-primary">{{ _('create') }}</a>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>{{ _('ch') }}</th>
+          <th>{{ _('title') }}</th>
+          <th>{{ _('pages') }}</th>
+          <th>{{ _('views') }}</th>
+          <th>{{ _('actions') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ch in chapters %}
+        <tr>
+          <td>{{ ch.number }}</td>
+          <td>{{ ch.title_en or ch.title_id }}</td>
+          <td>{{ ch.pages|page_count }}</td>
+          <td>{{ ch.views }}</td>
+          <td>
+            <a href="{{ url_for('admin.edit_chapter', id=ch.id) }}" class="btn btn-ghost" style="padding:4px 12px;font-size:12px">{{ _('edit') }}</a>
+            <form method="POST" action="{{ url_for('admin.delete_chapter', id=ch.id) }}" style="display:inline" onsubmit="return confirm('Delete?')">
+              <button type="submit" class="btn btn-danger" style="padding:4px 12px;font-size:12px">{{ _('delete') }}</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

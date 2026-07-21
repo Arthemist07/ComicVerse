@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="{{ session.get('language', 'en') }}" data-theme="{{ current_user.theme if current_user.is_authenticated else 'dark' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ get_setting('site_name_en') or 'ComicVerse' }} - {% block title %}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% if get_setting('custom_css') %}<style>{{ get_setting('custom_css') | safe }}</style>{% endif %}
+</head>
+<body>
+  <nav class="navbar">
+    <a href="{{ url_for('main.index') }}" class="nav-logo">{{ get_setting('site_name_en') or 'ComicVerse' }}</a>
+    <div class="nav-links">
+      <a href="{{ url_for('main.index') }}" class="{% if request.endpoint == 'main.index' %}active{% endif %}">{{ _('home') }}</a>
+      <a href="{{ url_for('comic.genres') }}">{{ _('genres') }}</a>
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('main.my_profile') }}">{{ _('profile') }}</a>
+        {% if current_user.is_admin %}
+          <a href="{{ url_for('admin.dashboard') }}">{{ _('admin_panel') }}</a>
+        {% endif %}
+      {% endif %}
+      <a href="{{ url_for('main.changelog') }}">{{ _('changelog') }}</a>
+    </div>
+    <div class="nav-right">
+      <div class="search-bar">
+        <span>🔍</span>
+        <input type="text" placeholder="{{ _('search') }}" oninput="searchComics(this.value)" value="{{ request.args.get('q', '') }}">
+      </div>
+      {% if current_user.is_authenticated %}
+        <div style="position:relative">
+          <button id="notifBtn" class="btn btn-ghost" onclick="toggleNotifications()" style="position:relative;padding:8px 12px">
+            🔔 <span id="notifBadge" class="notif-badge" style="display:none">0</span>
+          </button>
+          <div id="notifDropdown" class="notif-dropdown">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between">
+              <strong>{{ _('notifications') }}</strong>
+              <button onclick="markAllRead()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px">{{ _('mark_all_read') }}</button>
+            </div>
+            <div id="notifList"></div>
+          </div>
+        </div>
+        <a href="{{ url_for('main.my_profile') }}" style="text-decoration:none;color:var(--text-primary);font-size:14px;font-weight:500">
+          {{ current_user.username }}
+        </a>
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-ghost">{{ _('logout') }}</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn-ghost">{{ _('login') }}</a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary">{{ _('register') }}</a>
+      {% endif %}
+      <a href="{{ url_for('main.set_language', lang='en') }}" style="text-decoration:none;color:var(--text-secondary);font-size:13px">EN</a>
+      <span style="color:var(--text-secondary)">|</span>
+      <a href="{{ url_for('main.set_language', lang='id') }}" style="text-decoration:none;color:var(--text-secondary);font-size:13px">ID</a>
+      <button onclick="toggleTheme()" class="btn btn-ghost" style="padding:8px 12px;font-size:16px" id="themeToggle">🌙</button>
+    </div>
+  </nav>
+
+  {% if get_setting('custom_bg') %}
+  <div style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;background-image:url('{{ get_setting('custom_bg') }}');background-size:cover;background-position:center;opacity:0.15;pointer-events:none"></div>
+  {% endif %}
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <script>showToast("{{ message }}", "{{ category }}");</script>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+
+  <script>const currentUser = {{ 'true' if current_user.is_authenticated else 'false' }};</script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% if get_setting('custom_js') %}<script>{{ get_setting('custom_js') | safe }}</script>{% endif %}
+</body>
+</html>

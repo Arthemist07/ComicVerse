@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ _('genres') }}{% endblock %}
+{% block content %}
+<div class="container" style="margin-top:64px;padding-top:24px">
+  <h1 class="section-title" style="margin-bottom:24px">{{ _('genres') }}</h1>
+  <div class="genre-selector" style="gap:12px">
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary">{{ _('all') }}</a>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px">
+    {% for genre in genres %}
+    <a href="/?genre={{ genre.id }}"
+       style="display:flex;align-items:center;gap:12px;padding:20px;background:var(--bg-card);border-radius:var(--radius);text-decoration:none;color:var(--text-primary);border:1px solid var(--border);transition:var(--transition)">
+      <div style="width:40px;height:40px;border-radius:8px;background:var(--accent-glow);display:flex;align-items:center;justify-content:center;font-size:20px">
+        📚
+      </div>
+      <div>
+        <strong>{{ genre.name_en if session.get('language') == 'en' else genre.name_id }}</strong>
+        <div style="font-size:12px;color:var(--text-secondary)">{{ genre.comics.count() }} comics</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

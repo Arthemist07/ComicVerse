@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ _('manage_comics') }}{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <a href="{{ url_for('admin.dashboard') }}">{{ _('dashboard') }}</a>
+    <a href="{{ url_for('admin.comics') }}" class="active">{{ _('manage_comics') }}</a>
+    <a href="{{ url_for('admin.manage_genres') }}">{{ _('manage_genres') }}</a>
+    <a href="{{ url_for('admin.manage_users') }}">{{ _('manage_users') }}</a>
+    <a href="{{ url_for('admin.settings') }}">{{ _('settings') }}</a>
+    <a href="{{ url_for('admin.manage_changelog') }}">{{ _('changelog') }}</a>
+    <a href="{{ url_for('admin.import_comic') }}">{{ _('import_comic') }}</a>
+  </div>
+  <div class="admin-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <h2>{{ _('manage_comics') }}</h2>
+      <a href="{{ url_for('admin.create_comic') }}" class="btn btn-primary">{{ _('create_comic') }}</a>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>{{ _('title') }}</th>
+          <th>{{ _('type') }}</th>
+          <th>{{ _('chapters') }}</th>
+          <th>{{ _('views') }}</th>
+          <th>{{ _('actions') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for comic in comics %}
+        <tr>
+          <td>{{ comic.id }}</td>
+          <td>{{ comic.title_en }}</td>
+          <td><span class="tag">{{ comic.type }}</span></td>
+          <td>{{ comic.chapters.count() }}</td>
+          <td>{{ comic.views }}</td>
+          <td>
+            <a href="{{ url_for('admin.edit_comic', id=comic.id) }}" class="btn btn-ghost" style="padding:4px 12px;font-size:12px">{{ _('edit') }}</a>
+            <a href="{{ url_for('admin.chapters', comic_id=comic.id) }}" class="btn btn-ghost" style="padding:4px 12px;font-size:12px">{{ _('chapters') }}</a>
+            <form method="POST" action="{{ url_for('admin.delete_comic', id=comic.id) }}" style="display:inline" onsubmit="return confirm('Delete?')">
+              <button type="submit" class="btn btn-danger" style="padding:4px 12px;font-size:12px">{{ _('delete') }}</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

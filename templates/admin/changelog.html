@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ _('changelog') }}{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <a href="{{ url_for('admin.dashboard') }}">{{ _('dashboard') }}</a>
+    <a href="{{ url_for('admin.comics') }}">{{ _('manage_comics') }}</a>
+    <a href="{{ url_for('admin.manage_genres') }}">{{ _('manage_genres') }}</a>
+    <a href="{{ url_for('admin.manage_users') }}">{{ _('manage_users') }}</a>
+    <a href="{{ url_for('admin.settings') }}">{{ _('settings') }}</a>
+    <a href="{{ url_for('admin.manage_changelog') }}" class="active">{{ _('changelog') }}</a>
+    <a href="{{ url_for('admin.import_comic') }}">{{ _('import_comic') }}</a>
+  </div>
+  <div class="admin-content">
+    <h2 style="margin-bottom:24px">{{ _('changelog') }}</h2>
+    <form method="POST" style="max-width:600px;margin-bottom:32px;background:var(--bg-card);padding:24px;border-radius:var(--radius);border:1px solid var(--border)">
+      <h3 style="margin-bottom:16px">{{ _('new') }} {{ _('changelog') }}</h3>
+      <div class="form-group">
+        <label>{{ _('version') }}</label>
+        <input type="text" name="version" class="form-input" placeholder="1.0.0" required>
+      </div>
+      <div class="form-group">
+        <label>Content (EN)</label>
+        <textarea name="content_en" class="form-textarea" rows="4" placeholder="What's new in this version?" required></textarea>
+      </div>
+      <div class="form-group">
+        <label>Content (ID)</label>
+        <textarea name="content_id" class="form-textarea" rows="4" placeholder="Apa yang baru di versi ini?" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">{{ _('save') }}</button>
+    </form>
+
+    {% if logs %}
+    <div style="display:grid;gap:12px">
+      {% for log in logs %}
+      <div style="background:var(--bg-card);border-radius:var(--radius);padding:20px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:start">
+        <div>
+          <strong>v{{ log.version }}</strong>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;white-space:pre-wrap">{{ log.content_en[:100] }}{% if log.content_en|length > 100 %}...{% endif %}</div>
+        </div>
+        <form method="POST" action="{{ url_for('admin.delete_changelog', id=log.id) }}" onsubmit="return confirm('Delete?')">
+          <button type="submit" class="btn btn-danger" style="padding:4px 12px;font-size:12px">{{ _('delete') }}</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ profile_user.username }}{% endblock %}
+{% block content %}
+<div class="profile-page">
+  <div class="profile-header">
+    <img src="{{ profile_user.avatar if profile_user.avatar != 'default.png' else 'https://via.placeholder.com/120x120?text=' + profile_user.username[0]|upper }}"
+         class="profile-avatar" alt="">
+    <h1 class="profile-name">{{ profile_user.username }}</h1>
+    <p class="profile-bio">{{ profile_user.bio or 'No bio yet' }}</p>
+    <div class="profile-stats">
+      <div>
+        <div style="font-size:24px;font-weight:700">{{ profile_user.followers_count() }}</div>
+        <div style="font-size:13px;color:var(--text-secondary)">{{ _('followers') }}</div>
+      </div>
+      <div>
+        <div style="font-size:24px;font-weight:700">{{ profile_user.followed_count() }}</div>
+        <div style="font-size:13px;color:var(--text-secondary)">{{ _('following') }}</div>
+      </div>
+      <div>
+        <div style="font-size:24px;font-weight:700">{{ profile_user.favorites.count() }}</div>
+        <div style="font-size:13px;color:var(--text-secondary)">{{ _('favorites') }}</div>
+      </div>
+    </div>
+    {% if current_user.is_authenticated and current_user.id != profile_user.id %}
+    <button class="btn btn-primary" onclick="toggleFollow({{ profile_user.id }}, this)">
+      {{ _('unfollow') if current_user.is_following(profile_user) else _('follow') }}
+    </button>
+    {% elif current_user.id == profile_user.id %}
+    <button class="btn btn-ghost" onclick="editProfile()">{{ _('edit_profile') }}</button>
+    {% endif %}
+  </div>
+
+  {% if current_user.id == profile_user.id %}
+  <div style="max-width:800px;margin:0 auto">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
+      <div>
+        <h3 style="margin-bottom:16px">{{ _('history') }}</h3>
+        <div id="historyList"><p style="color:var(--text-secondary)">{{ _('loading') }}</p></div>
+      </div>
+      <div>
+        <h3 style="margin-bottom:16px">{{ _('favorites') }}</h3>
+        <div id="favoritesList"><p style="color:var(--text-secondary)">{{ _('loading') }}</p></div>
+      </div>
+    </div>
+  </div>
+  <script>loadHistory(); loadFavorites();</script>
+  {% endif %}
+</div>
+
+<div id="editProfileModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:var(--bg-card);border-radius:var(--radius);padding:32px;width:90%;max-width:500px;border:1px solid var(--border)">
+    <h3 style="margin-bottom:16px">{{ _('edit_profile') }}</h3>
+    <form id="profileForm">
+      <div class="form-group">
+        <label>{{ _('bio') }}</label>
+        <textarea name="bio" class="form-textarea">{{ profile_user.bio }}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Avatar URL</label>
+        <input type="text" name="avatar" class="form-input" value="{{ profile_user.avatar if profile_user.avatar != 'default.png' else '' }}">
+      </div>
+      <div class="form-group">
+        <label>{{ _('language') }}</label>
+        <select name="language" class="form-select">
+          <option value="en" {% if profile_user.language == 'en' %}selected{% endif %}>English</option>
+          <option value="id" {% if profile_user.language == 'id' %}selected{% endif %}>Bahasa Indonesia</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">{{ _('save') }}</button>
+    </form>
+  </div>
+</div>
+
+<script>
+function editProfile() {
+  document.getElementById('editProfileModal').style.display = 'flex';
+}
+
+document.getElementById('profileForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const fd = new FormData(this);
+  fetch('/api/profile/update', { method: 'POST', body: new URLSearchParams(fd) })
+    .then(r => r.json())
+    .then(() => { location.reload(); });
+});
+
+document.getElementById('editProfileModal').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
+</script>
+{% endblock %}

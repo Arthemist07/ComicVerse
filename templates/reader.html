@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ comic.title_en }} - {{ _('ch') }} {{ chapter.number }}{% endblock %}
+{% block content %}
+<div class="reader-page">
+  <div style="padding:16px 24px;display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.8)">
+    <a href="{{ url_for('comic.comic_detail', comic_id=comic.id) }}" style="color:white;text-decoration:none;font-size:14px">
+      ← {{ comic.title_en }}
+    </a>
+    <div style="color:white;font-size:14px;font-weight:600">
+      {{ _('ch') }} {{ chapter.number }}
+      {% if session.get('language') == 'en' and chapter.title_en %} - {{ chapter.title_en }}{% elif chapter.title_id %} - {{ chapter.title_id }}{% endif %}
+    </div>
+    <div></div>
+  </div>
+
+  <div class="reader-content">
+    {% for page in pages %}
+    <img src="{{ page }}" class="reader-page-img" alt="Page {{ loop.index }}" onclick="zoomPage(this)" loading="lazy">
+    {% else %}
+    <div style="padding:80px;text-align:center;color:var(--text-secondary)">{{ _('no_pages') }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="reader-toolbar">
+    {% if prev_ch %}
+    <a href="{{ url_for('comic.reader', comic_id=comic.id, chapter_id=prev_ch.id) }}">← {{ _('prev_chapter') }}</a>
+    {% else %}
+    <a style="opacity:0.3;pointer-events:none">← {{ _('prev_chapter') }}</a>
+    {% endif %}
+
+    <a href="{{ url_for('comic.comic_detail', comic_id=comic.id) }}">{{ _('back_to_detail') }}</a>
+
+    <span style="color:rgba(255,255,255,0.5);font-size:13px">{{ _('scroll_zoom') }}</span>
+
+    {% if next_ch %}
+    <a href="{{ url_for('comic.reader', comic_id=comic.id, chapter_id=next_ch.id) }}">{{ _('next_chapter') }} →</a>
+    {% else %}
+    <a style="opacity:0.3;pointer-events:none">{{ _('next_chapter') }} →</a>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+document.addEventListener('keydown', function(e) {
+  const pages = document.querySelectorAll('.reader-page-img');
+  let current = 0;
+  pages.forEach((p, i) => {
+    const rect = p.getBoundingClientRect();
+    if (rect.top >= 0 && rect.top < window.innerHeight) current = i;
+  });
+  if (e.key === 'ArrowLeft' && current > 0) {
+    pages[current - 1].scrollIntoView({ behavior: 'smooth' });
+  }
+  if (e.key === 'ArrowRight' && current < pages.length - 1) {
+    pages[current + 1].scrollIntoView({ behavior: 'smooth' });
+  }
+});
+</script>
+{% endblock %}

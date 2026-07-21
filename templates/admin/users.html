@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ _('manage_users') }}{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <a href="{{ url_for('admin.dashboard') }}">{{ _('dashboard') }}</a>
+    <a href="{{ url_for('admin.comics') }}">{{ _('manage_comics') }}</a>
+    <a href="{{ url_for('admin.manage_genres') }}">{{ _('manage_genres') }}</a>
+    <a href="{{ url_for('admin.manage_users') }}" class="active">{{ _('manage_users') }}</a>
+    <a href="{{ url_for('admin.settings') }}">{{ _('settings') }}</a>
+    <a href="{{ url_for('admin.manage_changelog') }}">{{ _('changelog') }}</a>
+    <a href="{{ url_for('admin.import_comic') }}">{{ _('import_comic') }}</a>
+  </div>
+  <div class="admin-content">
+    <h2 style="margin-bottom:24px">{{ _('manage_users') }}</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>{{ _('username') }}</th>
+          <th>{{ _('email') }}</th>
+          <th>{{ _('followers') }}</th>
+          <th>{{ _('favorites') }}</th>
+          <th>Admin</th>
+          <th>{{ _('joined') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>{{ user.id }}</td>
+          <td>{{ user.username }}</td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.followers_count() }}</td>
+          <td>{{ user.favorites.count() }}</td>
+          <td>{{ '✅' if user.is_admin else '❌' }}</td>
+          <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

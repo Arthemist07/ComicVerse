@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ _('changelog') }}{% endblock %}
+{% block content %}
+<div class="container" style="margin-top:64px;padding-top:24px">
+  <h1 class="section-title" style="margin-bottom:32px">{{ _('changelog') }}</h1>
+  <div style="max-width:700px;margin:0 auto">
+    {% for log in logs %}
+    <div style="background:var(--bg-card);border-radius:var(--radius);padding:24px;margin-bottom:16px;border:1px solid var(--border);border-left:3px solid var(--accent)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-weight:700;font-size:16px">{{ _('version') }} {{ log.version }}</span>
+        <span style="font-size:13px;color:var(--text-secondary)">{{ log.created_at.strftime('%Y-%m-%d') if log.created_at else '' }}</span>
+      </div>
+      <div style="color:var(--text-secondary);line-height:1.6;white-space:pre-wrap">
+        {{ log.content_id if session.get('language') == 'id' else log.content_en }}
+      </div>
+    </div>
+    {% else %}
+    <p style="text-align:center;color:var(--text-secondary);padding:40px">{{ _('no_changelog') }}</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

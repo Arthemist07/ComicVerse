@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ _('manage_genres') }}{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <a href="{{ url_for('admin.dashboard') }}">{{ _('dashboard') }}</a>
+    <a href="{{ url_for('admin.comics') }}">{{ _('manage_comics') }}</a>
+    <a href="{{ url_for('admin.manage_genres') }}" class="active">{{ _('manage_genres') }}</a>
+    <a href="{{ url_for('admin.manage_users') }}">{{ _('manage_users') }}</a>
+    <a href="{{ url_for('admin.settings') }}">{{ _('settings') }}</a>
+    <a href="{{ url_for('admin.manage_changelog') }}">{{ _('changelog') }}</a>
+    <a href="{{ url_for('admin.import_comic') }}">{{ _('import_comic') }}</a>
+  </div>
+  <div class="admin-content">
+    <h2 style="margin-bottom:24px">{{ _('manage_genres') }}</h2>
+    <form method="POST" action="{{ url_for('admin.create_genre') }}" style="display:flex;gap:12px;margin-bottom:24px">
+      <input type="text" name="name_en" class="form-input" placeholder="Name (EN)" required style="max-width:200px">
+      <input type="text" name="name_id" class="form-input" placeholder="Name (ID)" required style="max-width:200px">
+      <button type="submit" class="btn btn-primary">{{ _('create') }}</button>
+    </form>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name (EN)</th>
+          <th>Name (ID)</th>
+          <th>{{ _('comics') }}</th>
+          <th>{{ _('actions') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for genre in genres %}
+        <tr>
+          <td>{{ genre.id }}</td>
+          <td>{{ genre.name_en }}</td>
+          <td>{{ genre.name_id }}</td>
+          <td>{{ genre.comics.count() }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('admin.delete_genre', id=genre.id) }}" style="display:inline" onsubmit="return confirm('Delete?')">
+              <button type="submit" class="btn btn-danger" style="padding:4px 12px;font-size:12px">{{ _('delete') }}</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

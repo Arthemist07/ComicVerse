@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ _('settings') }}{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <div class="admin-sidebar">
+    <a href="{{ url_for('admin.dashboard') }}">{{ _('dashboard') }}</a>
+    <a href="{{ url_for('admin.comics') }}">{{ _('manage_comics') }}</a>
+    <a href="{{ url_for('admin.manage_genres') }}">{{ _('manage_genres') }}</a>
+    <a href="{{ url_for('admin.manage_users') }}">{{ _('manage_users') }}</a>
+    <a href="{{ url_for('admin.settings') }}" class="active">{{ _('settings') }}</a>
+    <a href="{{ url_for('admin.manage_changelog') }}">{{ _('changelog') }}</a>
+    <a href="{{ url_for('admin.import_comic') }}">{{ _('import_comic') }}</a>
+  </div>
+  <div class="admin-content">
+    <h2 style="margin-bottom:24px">{{ _('settings') }}</h2>
+    <form method="POST" style="max-width:600px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="form-group">
+          <label>Site Name (EN)</label>
+          <input type="text" name="site_name_en" class="form-input" value="{{ get_setting('site_name_en') or 'ComicVerse' }}">
+        </div>
+        <div class="form-group">
+          <label>Site Name (ID)</label>
+          <input type="text" name="site_name_id" class="form-input" value="{{ get_setting('site_name_id') or 'ComicVerse' }}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Site Description</label>
+        <textarea name="site_description" class="form-textarea" rows="3">{{ get_setting('site_description') or '' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Footer Text (HTML allowed)</label>
+        <textarea name="footer_text" class="form-textarea" rows="2">{{ get_setting('footer_text') or '' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Custom Background Image URL</label>
+        <input type="text" name="custom_bg" class="form-input" value="{{ get_setting('custom_bg') or '' }}" placeholder="https://r2.dev/bg.jpg">
+      </div>
+      <div class="form-group">
+        <label>Custom CSS (will be injected site-wide)</label>
+        <textarea name="custom_css" class="form-textarea" rows="6" placeholder="/* Add your custom CSS here */">{{ get_setting('custom_css') or '' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Custom JS (will be injected site-wide)</label>
+        <textarea name="custom_js" class="form-textarea" rows="6" placeholder="// Add your custom JS here">{{ get_setting('custom_js') or '' }}</textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">{{ _('save') }}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
