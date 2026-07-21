@@ -103,7 +103,7 @@ def get_comments(comic_id):
                 'content': r.content,
                 'is_spoiler': r.is_spoiler,
                 'created_at': r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else ''
-            } for r in c.replies.all()]
+            } for r in c.replies]
         })
     return jsonify(result)
 

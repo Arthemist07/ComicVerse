@@ -224,4 +224,4 @@ class Comment(db.Model):
     parent_id = db.Column(db.Integer, db.ForeignKey('comment.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     user = db.relationship('User', backref='comments')
-    replies = db.relationship('Comment', backref='parent', remote_side=[id], lazy='dynamic')
+    replies = db.relationship('Comment', backref='parent', remote_side=[id])
