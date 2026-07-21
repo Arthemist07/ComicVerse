@@ -36,10 +36,10 @@
         </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap">
           {% if chapters %}
-          <a href="{{ url_for('comic.reader', comic_id=comic.id, chapter_id=chapters|last) }}" class="btn btn-primary">
+          <a href="{{ url_for('comic.reader', comic_id=comic.id, chapter_id=chapters|last|attr('id')) }}" class="btn btn-primary">
             {{ _('first_chapter') }}
           </a>
-          <a href="{{ url_for('comic.reader', comic_id=comic.id, chapter_id=chapters|first) }}" class="btn btn-ghost">
+          <a href="{{ url_for('comic.reader', comic_id=comic.id, chapter_id=chapters|first|attr('id')) }}" class="btn btn-ghost">
             {{ _('latest_chapter') }}
           </a>
           {% endif %}
