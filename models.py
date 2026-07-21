@@ -41,8 +41,16 @@ class User(UserMixin, db.Model):
 
     def add_xp(self, amount):
         self.xp = (self.xp or 0) + amount
-        config = LevelConfig.query.order_by(LevelConfig.level.desc()).all()
-        while True:
+        max_iter = 200
+        for _ in range(max_iter):
+            req = LevelConfig.query.filter_by(level=self.level + 1).first()
+            if not req and self.level < 200:
+                base = 100
+                for i in range(2, self.level + 1):
+                    base = int(base * 1.2)
+                req = LevelConfig(level=self.level + 1, xp_required=max(base, 1), title=f'Level {self.level + 1}')
+                db.session.add(req)
+                db.session.commit()
             req = LevelConfig.query.filter_by(level=self.level + 1).first()
             if req and self.xp >= req.xp_required:
                 self.level += 1

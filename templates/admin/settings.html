@@ -12,11 +12,10 @@
     <a href="{{ url_for('admin.import_comic') }}">{{ _('import_comic') }}</a>
     <a href="{{ url_for('admin.manage_levels') }}">Levels</a>
     <a href="{{ url_for('admin.manage_roles') }}">Roles</a>
-    <a href="{{ url_for('admin.upload') }}">Upload Images</a>
   </div>
   <div class="admin-content">
     <h2 style="margin-bottom:24px">{{ _('settings') }}</h2>
-    <form method="POST" style="max-width:700px">
+    <form method="POST" enctype="multipart/form-data" style="max-width:600px">
       <div class="form-group">
         <label>Site Name (EN)</label>
         <input type="text" name="site_name_en" class="form-input" value="{{ get_setting('site_name_en') or 'ComicVerse' }}">
@@ -30,31 +29,32 @@
         <textarea name="site_description" class="form-textarea" rows="3">{{ get_setting('site_description') or '' }}</textarea>
       </div>
       <div class="form-group">
-        <label>Site Logo URL <span style="color:var(--text-secondary);font-size:12px">(replaces text logo)</span></label>
-        <input type="text" name="site_logo" class="form-input" value="{{ get_setting('site_logo') or '' }}" placeholder="https://example.com/logo.png">
+        <label>Site Logo</label>
+        <input type="file" name="site_logo_file" class="form-input" accept="image/*" style="padding:8px">
         {% if get_setting('site_logo') %}<div style="margin-top:4px"><img src="{{ get_setting('site_logo') }}" style="height:32px;border-radius:4px"></div>{% endif %}
       </div>
       <div class="form-group">
-        <label>Favicon URL</label>
-        <input type="text" name="favicon" class="form-input" value="{{ get_setting('favicon') or '' }}" placeholder="https://example.com/favicon.ico">
+        <label>Favicon</label>
+        <input type="file" name="favicon_file" class="form-input" accept="image/*" style="padding:8px">
       </div>
       <div class="form-group">
         <label>Footer Text</label>
         <textarea name="footer_text" class="form-textarea" rows="2">{{ get_setting('footer_text') or '' }}</textarea>
       </div>
       <div class="form-group">
-        <label>Homepage Background URL</label>
-        <input type="text" name="custom_bg" class="form-input" value="{{ get_setting('custom_bg') or '' }}" placeholder="https://">
+        <label>Custom Background Image</label>
+        <input type="file" name="custom_bg_file" class="form-input" accept="image/*" style="padding:8px">
+        {% if get_setting('custom_bg') %}<div style="margin-top:4px"><img src="{{ get_setting('custom_bg') }}" style="width:200px;border-radius:6px;border:1px solid var(--border)"></div>{% endif %}
       </div>
       <div class="form-group">
         <label>Custom CSS</label>
-        <textarea name="custom_css" class="form-textarea" rows="6">{{ get_setting('custom_css') or '' }}</textarea>
+        <textarea name="custom_css" class="form-textarea" rows="6" placeholder="/* Add your custom CSS here */">{{ get_setting('custom_css') or '' }}</textarea>
       </div>
       <div class="form-group">
         <label>Custom JS</label>
-        <textarea name="custom_js" class="form-textarea" rows="6">{{ get_setting('custom_js') or '' }}</textarea>
+        <textarea name="custom_js" class="form-textarea" rows="6" placeholder="// Add your custom JS here">{{ get_setting('custom_js') or '' }}</textarea>
       </div>
-      <button type="submit" class="btn btn-primary" style="padding:12px 32px">{{ _('save') }}</button>
+      <button type="submit" class="btn btn-primary">{{ _('save') }}</button>
     </form>
   </div>
 </div>

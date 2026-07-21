@@ -260,14 +260,31 @@ def manage_users():
 @login_required
 @admin_required
 def settings():
+    from app import save_upload, allowed_file
     if request.method == 'POST':
-        for key in ['site_name_en', 'site_name_id', 'site_description', 'custom_css', 'custom_js', 'custom_bg', 'footer_text']:
+        text_keys = ['site_name_en', 'site_name_id', 'site_description', 'custom_css', 'custom_js', 'footer_text']
+        for key in text_keys:
             if key in request.form:
                 s = SiteSettings.query.filter_by(key=key).first()
                 if s:
                     s.value = request.form[key]
                 else:
                     db.session.add(SiteSettings(key=key, value=request.form[key]))
+        file_keys = {
+            'site_logo_file': 'site_logo',
+            'favicon_file': 'favicon',
+            'custom_bg_file': 'custom_bg'
+        }
+        for file_key, setting_key in file_keys.items():
+            f = request.files.get(file_key)
+            if f and allowed_file(f.filename):
+                url = save_upload(f, 'covers')
+                if url:
+                    s = SiteSettings.query.filter_by(key=setting_key).first()
+                    if s:
+                        s.value = url
+                    else:
+                        db.session.add(SiteSettings(key=setting_key, value=url))
         db.session.commit()
         flash('Settings saved!', 'success')
         return redirect(url_for('admin.settings'))
